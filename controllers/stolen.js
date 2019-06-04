@@ -83,7 +83,7 @@ exports.getItems = (req, res, next) => {
           nextPage: page + 1,
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
-          filterUrl: `&by=${by}&search=${search}`
+          filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
