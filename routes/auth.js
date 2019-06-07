@@ -1,5 +1,5 @@
 const express = require('express');
-const { check, body } =require('express-validator/check');
+const { check } =require('express-validator/check');
 
 const authController = require('../controllers/auth');
 const User = require('../models/user');
@@ -11,7 +11,7 @@ router.post(
   [
     check('email', 'Please enter a valid email')
       .isEmail(),
-    body('password', 'Please enter a valid password')
+    check('password', 'Please enter a valid password')
       .isLength({min: 5})
   ],
   authController.login);
@@ -30,11 +30,11 @@ router.post(
         });
       })
       .normalizeEmail(),
-    body('password')
+    check('password')
       .isLength({min: 5})
       .withMessage('Password must be at least 5 characters')
       .trim(),
-    body('confirmPassword')
+    check('confirmPassword')
       .custom((value, {req}) => {
         if (value !== req.body.password) {
           throw new Error('Passwords must match');
@@ -45,10 +45,39 @@ router.post(
   ],
   authController.signup);
 
-router.post('/reset', authController.reset);
+router.post(
+  '/reset', 
+  [
+    check('email')
+    .isEmail()
+    .withMessage('Please enter a valid email')
+    .custom((value, {req}) => {
+      return User.findOne({email: value}).then(userDoc => { 
+        if (!userDoc) {
+          return Promise.reject('Account does not exist');
+        }
+      });
+    })
+    .normalizeEmail()
+  ],
+  authController.reset);
 
 router.get('/reset/:token', authController.getNewPassword);
 
-router.post('/new-password', authController.postNewPassword);
+router.post(
+  '/new-password', 
+  [
+    check('userId')
+      .not().isEmpty()
+      .withMessage('The user id is required'),
+    check('passwordToken')
+      .not().isEmpty()
+      .withMessage('The password token is required'),
+    check('password')
+      .isLength({min: 5})
+      .withMessage('Password must be at least 5 characters')
+      .trim()
+  ],
+  authController.postNewPassword);
 
 module.exports = router;
