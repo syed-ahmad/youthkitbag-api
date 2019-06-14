@@ -7,7 +7,7 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
 
-const rootRoutes = require('./routes/root');
+const rootRoutes = require('./routes');
 
 const PORT = process.env.PORT || 8080;
 const MONGODB_URI = process.env.MONGODB_URLLOCAL;

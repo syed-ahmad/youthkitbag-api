@@ -17,6 +17,45 @@ const PASSWORD_RESET = 'Your account password has been reset. Please not login u
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
+exports.signup = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error(VALIDATION_FAILED);
+    error.statusCode = 422;
+    error.errors = errors.array();
+    throw error;
+  }
+
+  const email = req.body.email;
+  const password = req.body.password;
+
+  bcrypt
+    .hash(password, 12)
+    .then(hashedPassword => {
+      const user = new User({
+        email: email,
+        password: hashedPassword
+      });
+      return user.save();
+    })
+    .then(result => {
+      res.status(201).json({ message: 'User was created', userId: result._id });
+      const msg = {
+        to: email,
+        from: 'admin@youthkitbag.com',
+        subject: 'YouthKitbag Signup Successful',
+        text: 'Thank you for signing up to this service'
+      };
+      return sgMail.send(msg);
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
 exports.login = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -72,46 +111,7 @@ exports.login = (req, res, next) => {
           userId: loadedUser._id.toString()
         }, JWT_SECRET, { expiresIn: '1h'}
       );
-      res.status(200).json({ token: token, userId: loadedUser._id.toString() })
-    })
-    .catch(err => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
-};
-
-exports.signup = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error(VALIDATION_FAILED);
-    error.statusCode = 422;
-    error.errors = errors.array();
-    throw error;
-  }
-
-  const email = req.body.email;
-  const password = req.body.password;
-
-  bcrypt
-    .hash(password, 12)
-    .then(hashedPassword => {
-      const user = new User({
-        email: email,
-        password: hashedPassword
-      });
-      return user.save();
-    })
-    .then(result => {
-      res.status(201).json({ message: 'User was created', userId: result._id });
-      const msg = {
-        to: email,
-        from: 'admin@youthkitbag.com',
-        subject: 'YouthKitbag Signup Successful',
-        text: 'Thank you for signing up to this service'
-      };
-      return sgMail.send(msg);
+      res.status(200).json({ token: token, user: { _id: loadedUser._id.toString(), profile: loadedUser.profile, package: loadedUser.package, email: loadedUser.email } })
     })
     .catch(err => {
       if (!err.statusCode) {

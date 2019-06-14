@@ -7,16 +7,6 @@ const User = require('../models/user');
 const router = express.Router();
 
 router.post(
-  '/login', 
-  [
-    check('email', 'Please enter a valid email')
-      .isEmail(),
-    check('password', 'Please enter a valid password')
-      .isLength({min: 5})
-  ],
-  authController.login);
-
-router.post(
   '/signup', 
   [
     check('email')
@@ -44,6 +34,16 @@ router.post(
       .trim()
   ],
   authController.signup);
+
+router.post(
+  '/login', 
+  [
+    check('email', 'Please enter a valid email')
+      .isEmail(),
+    check('password', 'Please enter a valid password')
+      .isLength({min: 5})
+  ],
+  authController.login);
 
 router.post(
   '/reset', 
