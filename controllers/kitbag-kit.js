@@ -293,9 +293,6 @@ exports.getItems = (req, res, next) => {
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
-  
-  // local  req.userId = new ObjectId('5ceb9700846231160f2e402a');
-  req.userId = new ObjectId('5cffefdcb3828c154e982730');
 
   let query = { userId: req.userId, active: (by !== 'inactive') };
 
@@ -327,7 +324,6 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  console.log(query);
   Kit
     .find(query)
     .countDocuments()

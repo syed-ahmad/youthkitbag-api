@@ -10,7 +10,7 @@ const authRoutes = require('./auth');
 const router = express.Router();
 
 router.use('/account', isAuth, accountRoutes);
-router.use('/kitbag', kitbagRoutes);
+router.use('/kitbag', isAuth, kitbagRoutes);
 router.use('/market', marketRoutes);
 
 router.use('/auth', authRoutes);

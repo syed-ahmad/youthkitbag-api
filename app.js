@@ -6,6 +6,7 @@ const uuidv4 = require('uuid/v4');
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
+const cors = require('cors');
 
 const rootRoutes = require('./routes');
 
@@ -52,7 +53,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/', rootRoutes);
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  optionsSuccessStatus: 200
+};
+
+app.use('/', cors(corsOptions), rootRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);

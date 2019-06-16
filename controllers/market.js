@@ -3,7 +3,6 @@ const Message = require('../models/message');
 const User = require('../models/user');
 
 exports.createMessage = (req, res, next) => {
-  console.log(req.body);
   const sourceType = req.body.sourceType;
   const sourceId = req.body.sourceId;
 

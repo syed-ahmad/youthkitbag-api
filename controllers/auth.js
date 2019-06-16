@@ -111,7 +111,7 @@ exports.login = (req, res, next) => {
           userId: loadedUser._id.toString()
         }, JWT_SECRET, { expiresIn: '1h'}
       );
-      res.status(200).json({ token: token, user: { _id: loadedUser._id.toString(), profile: loadedUser.profile, package: loadedUser.package, email: loadedUser.email } })
+      res.status(200).json({ token: token, userId: loadedUser._id.toString() })
     })
     .catch(err => {
       if (!err.statusCode) {
