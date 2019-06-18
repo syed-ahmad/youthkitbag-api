@@ -144,11 +144,7 @@ exports.getItem = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      res.status(200).json({
-        kit: kit,
-        errors: [],
-        editing: true
-      });
+      res.status(200).json(kit);
     })
     .catch(err => {
       if (!err.statusCode) {
