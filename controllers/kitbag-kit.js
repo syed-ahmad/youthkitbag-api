@@ -4,6 +4,8 @@ const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 const awsHelper = require('../util/aws-helper');
 
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'tag', value: 'Tag' }, { key: 'inactive', value: 'All Inactive' } ];
+
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
   const title = req.body.title;
@@ -335,7 +337,8 @@ exports.getItems = (req, res, next) => {
         kits: kits,
         filter: {
           by: by,
-          search: search
+          search: search,
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,
