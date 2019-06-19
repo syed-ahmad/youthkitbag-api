@@ -18,18 +18,18 @@ router.delete('/kits/:kitId', kitController.delete);
 router.get('/kits/:kitId', kitController.getItem);
 router.get('/kits', kitController.getItems);
 
-router.get('/forsale/add/:kitId', forsaleController.getAdd);
-router.post('/forsale/add', kitValidation, forsaleController.add);
-router.post('/forsale/edit', kitValidation, forsaleController.edit);
-router.post('/forsale/delete', forsaleController.delete);
-router.get('/forsale/:forsaleId', forsaleController.getItem);
-router.get('/forsale', forsaleController.getItems);
+//router.get('/forsales/add/:kitId', forsaleController.getAdd);
+router.post('/forsales', kitValidation, forsaleController.add);
+router.put('/forsales/:forsaleId', kitValidation, forsaleController.edit);
+router.delete('/forsales/:forsaleId', forsaleController.delete);
+router.get('/forsales/:forsaleId', forsaleController.getItem);
+router.get('/forsales', forsaleController.getItems);
 
-router.get('/wanted/add/:kitId', wantedController.getAdd);
-router.post('/wanted/add', kitValidation, wantedController.add);
-router.post('/wanted/edit', kitValidation, wantedController.edit);
-router.post('/wanted/delete', wantedController.delete);
-router.get('/wanted/:wantedId', wantedController.getItem);
-router.get('/wanted', wantedController.getItems);
+//router.get('/wanted/add/:kitId', wantedController.getAdd);
+router.post('/wanteds', kitValidation, wantedController.add);
+router.put('/wanteds/:wantedId', kitValidation, wantedController.edit);
+router.delete('/wanteds/:wantedId', wantedController.delete);
+router.get('/wanteds/:wantedId', wantedController.getItem);
+router.get('/wanteds', wantedController.getItems);
 
 module.exports = router;
