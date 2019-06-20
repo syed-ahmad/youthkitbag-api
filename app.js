@@ -11,7 +11,7 @@ const cors = require('cors');
 const rootRoutes = require('./routes');
 
 const PORT = process.env.PORT || 8080;
-const MONGODB_URI = process.env.MONGODB_URL;
+const MONGODB_URI = process.env.MONGODB_URLLOCAL;
 
 const app = express();
 

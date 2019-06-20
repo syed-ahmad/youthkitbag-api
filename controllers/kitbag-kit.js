@@ -8,6 +8,8 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
+  console.log('req.body', req.body);
+
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
@@ -37,7 +39,7 @@ exports.add = (req, res, next) => {
       });
   }
 
-  const warningLevel = +req.body.warningLevel || 0;
+  const warning = +req.body.warning || 0;
   
   let activitys = req.body.activitys;
   if (activitys) {
@@ -49,7 +51,6 @@ exports.add = (req, res, next) => {
     tags = tags.split(',').map(s => s.trim().toLowerCase());
   }
 
-  const keptInbag = req.body.keptInbag;
   const active = req.body.active;
   
   let images = req.files;
@@ -62,31 +63,30 @@ exports.add = (req, res, next) => {
     });
   }
 
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      kit: {
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        status: status,
-        security: security,
-        purchases: purchases,
-        inbag: inbag,
-        warningLevel: warningLevel,
-        activitys: activitys,
-        tags: tags,
-        keptInbag: keptInbag,
-        active: active
-      },
-      errors: errors,
-      editing: false
-    });
-  }
+  // const validation = validationResult(req);
+  // let errors = [];
+  // if (!validation.isEmpty()) {
+  //   errors = validation.array();
+  // }
+  // if (errors.length) {
+  //   return res.status(422).json({
+  //     kit: {
+  //       title: title,
+  //       subtitle: subtitle,
+  //       description: description,
+  //       status: status,
+  //       security: security,
+  //       purchases: purchases,
+  //       inbag: inbag,
+  //       warning: warning,
+  //       activitys: activitys,
+  //       tags: tags,
+  //       active: active
+  //     },
+  //     errors: errors,
+  //     editing: false
+  //   });
+  // }
 
   const kit = new Kit({
     title: title,
@@ -96,11 +96,10 @@ exports.add = (req, res, next) => {
     security: security,
     purchases: purchases,
     inbag: inbag,
-    warningLevel: warningLevel,
+    warning: warning,
     images: images,
     activitys: activitys,
     tags: tags,
-    keptInbag: keptInbag,
     active: active,
     userId: req.userId
   });
@@ -188,7 +187,7 @@ exports.edit = (req, res, next) => {
       });
   }
 
-  const warningLevel = +req.body.warningLevel || 0;
+  const warning = +req.body.warning || 0;
 
   let activitys = req.body.activitys;
   if (activitys) {
@@ -200,7 +199,6 @@ exports.edit = (req, res, next) => {
     tags = tags.split(',').map(s => s.trim().toLowerCase());
   }
 
-  const keptInbag = req.body.keptInbag;
   const active = req.body.active;
   
   let images = req.files;
@@ -229,10 +227,9 @@ exports.edit = (req, res, next) => {
         security: security,
         purchases: purchases,
         inbag: inbag,
-        warningLevel: warningLevel,
+        warning: warning,
         activitys: activitys,
         tags: tags,
-        keptInbag: keptInbag,
         active: active
       },
       errors: errors,
@@ -258,7 +255,7 @@ exports.edit = (req, res, next) => {
       kit.status = status,
       kit.security = security,
       kit.inbag = inbag;
-      kit.warningLevel = warningLevel;
+      kit.warning = warning;
       kit.purchases = purchases;
       kit.purchased = {};
       if (images.length > 0) {
@@ -269,7 +266,6 @@ exports.edit = (req, res, next) => {
       }
       kit.activitys = activitys;
       kit.tags = tags;
-      kit.keptInbag = keptInbag;
       kit.active = active;
       return kit.save();
     })

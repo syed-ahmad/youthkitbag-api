@@ -14,8 +14,8 @@ const kitSchema = new Schema({
     type: String
   },
   status: {
-    type: Number,
-    default: 0
+    type: String,
+    default: 'owned'
   },
   security: String,
   purchases: [
@@ -34,10 +34,6 @@ const kitSchema = new Schema({
       }
     }
   ],
-  keptInbag: {
-    type: Boolean,
-    default: false
-  },
   inbag: [
     {
       location: {
@@ -51,7 +47,7 @@ const kitSchema = new Schema({
       }  
     }
   ],
-  warningLevel: {
+  warning: {
     type: Number
   },
   images: [
