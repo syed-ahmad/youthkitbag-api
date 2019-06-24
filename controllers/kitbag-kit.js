@@ -19,7 +19,7 @@ exports.add = (req, res, next) => {
   let purchases = req.body.purchases;
   if (purchases) {
     purchases = purchases
-      .filter(i => i.from.length)
+      .filter(i => i.from)
       .map(i => {
         let item = {...i};
         item.price = +i.price;
@@ -31,7 +31,7 @@ exports.add = (req, res, next) => {
   let inbag = req.body.inbag;
   if (inbag) {
     inbag = inbag
-      .filter(i => i.location.length)
+      .filter(i => i.location)
       .map(i => {
         let item = {...i};
         item.quantity = +i.quantity;
@@ -167,7 +167,7 @@ exports.edit = (req, res, next) => {
   let purchases = req.body.purchases;
   if (purchases) {
     purchases = purchases
-      .filter(i => i.from.length)
+      .filter(i => i.from)
       .map(i => {
         let item = {...i};
         item.price = +i.price;
@@ -179,7 +179,7 @@ exports.edit = (req, res, next) => {
   let inbag = req.body.inbag;
   if (inbag) {
     inbag = inbag
-      .filter(i => i.location.length)
+      .filter(i => i.location)
       .map(i => {
         let item = {...i};
         item.quantity = +i.quantity;
