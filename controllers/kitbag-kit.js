@@ -43,12 +43,12 @@ exports.add = (req, res, next) => {
   
   let activitys = req.body.activitys;
   if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
+    activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
   let tags = req.body.tags;
   if (tags) {
-    tags = tags.split(',').map(s => s.trim().toLowerCase());
+    tags = tags.map(s => s.trim().toLowerCase());
   }
 
   const active = req.body.active;
@@ -155,9 +155,9 @@ exports.getItem = (req, res, next) => {
     });
 };
 
-// POST request to save edited changes to existing item in kitbag
+// PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
-  const kitId = req.body.kitId;
+  const kitId = req.params.kitId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
@@ -191,12 +191,12 @@ exports.edit = (req, res, next) => {
 
   let activitys = req.body.activitys;
   if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
+    activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
   let tags = req.body.tags;
   if (tags) {
-    tags = tags.split(',').map(s => s.trim().toLowerCase());
+    tags = tags.map(s => s.trim().toLowerCase());
   }
 
   const active = req.body.active;
@@ -258,7 +258,7 @@ exports.edit = (req, res, next) => {
       kit.warning = warning;
       kit.purchases = purchases;
       kit.purchased = {};
-      if (images.length > 0) {
+      if (images && images.length > 0) {
         kit.images.forEach((img, i) => {
           awsHelper.deleteImage(img.image);
         });
