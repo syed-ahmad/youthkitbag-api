@@ -359,8 +359,7 @@ exports.getItems = (req, res, next) => {
 
 // POST request to delete item from kitbag
 exports.delete = (req, res, next) => {
-  const kitId = req.body.kitId;
-  const confirm = req.body.confirm;
+  const kitId = req.params.kitId;
   
   Kit.findById(kitId)
     .then(kit => {
@@ -372,11 +371,6 @@ exports.delete = (req, res, next) => {
       if (kit.userId.toString() !== req.userId.toString()) {
         const error = new Error('You are not authorized to delete this item of kit');
         error.statusCode = 403;
-        throw error;
-      }
-      if (confirm !== 'delete') {
-        const error = new Error('You did not confirm the delete');
-        error.statusCode = 400;
         throw error;
       }
       if (kit.images) {
