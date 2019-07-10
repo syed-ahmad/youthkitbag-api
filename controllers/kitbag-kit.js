@@ -157,6 +157,8 @@ exports.getItem = (req, res, next) => {
 
 // PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
+  console.log('req.body', req.body);
+  console.log('req.params', req.params);
   const kitId = req.params.kitId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
