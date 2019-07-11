@@ -37,3 +37,12 @@ exports.getSignS3 = (req, res, next) => {
 exports.postStore = (req, res, next) => {
   res.status(200).json({ loaded: true });
 };
+
+exports.add = (req, res, next) => {
+  console.log('add image');
+  res.status(200).json({ added: true });};
+
+exports.delete = (req, res, next) => {
+  console.log('delete image');
+  res.status(200).json({ deleted: true });
+};
