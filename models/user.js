@@ -54,7 +54,8 @@ const userSchema = new Schema({
     size: {
       kit: { type: Number, default: 0 },
       forsale: { type: Number, default: 0 },
-      wanted: { type: Number, default: 0 }
+      wanted: { type: Number, default: 0 },
+      photos: { type: Number, default: 0 }
     }
   },
   resetToken: String,

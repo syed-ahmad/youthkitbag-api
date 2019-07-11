@@ -1,4 +1,6 @@
 const aws = require('aws-sdk');
+const Photo = require('../models/photo');
+const User = require('../models/user');
 
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
 
@@ -40,7 +42,65 @@ exports.postStore = (req, res, next) => {
 
 exports.add = (req, res, next) => {
   console.log('add image');
-  res.status(200).json({ added: true });};
+  console.log('req.body', req.body);
+
+  const reachedLimit = User
+    .findById(req.userId)
+    .then (user => { 
+      return user.package.max.photos <= user.package.size.photos;
+    });
+
+  if (reachedLimit) {
+    const error = new Error('You have reached the limit of the number of photos you can upload for your membership level');
+    error.statusCode = 500;
+    throw error;  
+  };
+
+  let images = req.files;
+  images = [];
+  images.push({ key: 'blahblahblah', location: 'https://youthkitbag.s3.eu-west-2.amazonaws.com/1558140403374-IMG_7286.jpeg'})
+  if (images && images.length > 0) {
+    images = images.map(i => { 
+      const image = {};
+      image.image = i.key; 
+      image.imageUrl = i.location;
+      return image;
+    });
+  } else {
+    const error = new Error('No photo added to request');
+    error.statusCode = 500;
+    throw error;
+  }
+
+  const photo = new Photo({
+    image: images[0].image,
+    imageUrl: images[0].imageUrl,
+    userId: req.userId
+  });
+  
+  let newPhoto;
+
+  photo
+    .save()
+    .then(result => {
+      newPhoto = result;
+      User
+        .findById(req.userId)
+        .then (user => { 
+          user.package.size.photos += 1;
+          return user.save();
+        })
+        .then(() => {
+          res.status(201).json({ photo: newPhoto });
+        });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
 
 exports.delete = (req, res, next) => {
   console.log('delete image');

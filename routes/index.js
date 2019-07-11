@@ -15,7 +15,7 @@ router.use('/account', isAuth, accountRoutes);
 router.use('/user', isAuth, userRoutes);
 router.use('/kitbag', isAuth, kitbagRoutes);
 router.use('/market', marketRoutes);
-router.use('/image', imageRoutes);
+router.use('/image', isAuth, imageRoutes);
 
 router.use('/auth', authRoutes);
 
