@@ -52,16 +52,8 @@ exports.add = (req, res, next) => {
   }
 
   const active = req.body.active;
-  
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
-  }
+
+  const images = req.body.images;
 
   // const validation = validationResult(req);
   // let errors = [];
@@ -159,6 +151,7 @@ exports.getItem = (req, res, next) => {
 exports.edit = (req, res, next) => {
   console.log('req.body', req.body);
   console.log('req.params', req.params);
+
   const kitId = req.params.kitId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
@@ -202,16 +195,8 @@ exports.edit = (req, res, next) => {
   }
 
   const active = req.body.active;
-  
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
-  }
+
+  const images = req.body.images;
 
   const validation = validationResult(req);
   let errors = [];
@@ -259,13 +244,8 @@ exports.edit = (req, res, next) => {
       kit.inbag = inbag;
       kit.warning = warning;
       kit.purchases = purchases;
-      kit.purchased = {};
-      if (images && images.length > 0) {
-        kit.images.forEach((img, i) => {
-          awsHelper.deleteImage(img.image);
-        });
-        kit.images = images;
-      }
+      kit.purchased = undefined;
+      kit.images = images;
       kit.activitys = activitys;
       kit.tags = tags;
       kit.active = active;
