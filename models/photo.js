@@ -11,6 +11,12 @@ const photoSchema = new Schema({
     type: String,
     required: true
   },
+  sourceId: {
+    type: Schema.Types.ObjectId
+  },
+  sourceType: {
+    type: String
+  },
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',

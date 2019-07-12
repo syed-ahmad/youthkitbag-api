@@ -1,4 +1,5 @@
 const aws = require('aws-sdk');
+const awsHelper = require('../util/aws-helper');
 const Photo = require('../models/photo');
 const User = require('../models/user');
 
@@ -41,12 +42,8 @@ exports.postStore = (req, res, next) => {
 };
 
 exports.add = (req, res, next) => {
-  console.log('add image');
-  console.log('req.body', req.body);
 
-  let images = req.files;
-  // images = [];
-  // images.push({ key: 'blahblahblah', location: 'https://youthkitbag.s3.eu-west-2.amazonaws.com/1558140403374-IMG_7286.jpeg'})
+  let image = req.file;
 
   User
     .findById(req.userId)
@@ -56,27 +53,24 @@ exports.add = (req, res, next) => {
     })
     .then (reachedLimit => {
       if (reachedLimit) {
+        awsHelper.deleteImage(image.key)
         const error = new Error('You have reached the limit of the number of photos you can upload for your membership level');
         error.statusCode = 500;
         throw error;
       };
 
-      if (images && images.length > 0) {
-        images = images.map(i => { 
-          const image = {};
-          image.image = i.key; 
-          image.imageUrl = i.location;
-          return image;
-        });
-      } else {
+      // Multer will catch scenario where photo property exists and no photo added, throwing a "Boundary not found" error
+      // but this check is being kept in case a different package is added that does not handle the situation
+      if (!image) {
         const error = new Error('No photo added to request');
         error.statusCode = 500;
         throw error;
       }
 
+      // Need to save all the photos that were uploaded - or do I restrict to one per time.
       const photo = new Photo({
-        image: images[0].image,
-        imageUrl: images[0].imageUrl,
+        image: image.key,
+        imageUrl: image.location,
         userId: req.userId
       });
       

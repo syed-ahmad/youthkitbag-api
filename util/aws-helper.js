@@ -9,6 +9,7 @@ aws.config.update({
 const s3 = new aws.S3();
 
 exports.deleteImage = (imageKey) => {
+  console.log('IMAGE KEY', imageKey);
   var params = {  Bucket: process.env.AWS_S3_BUCKET, Key: imageKey };
   s3.deleteObject(params, function(err, data) {
     if (err) {

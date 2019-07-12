@@ -400,35 +400,3 @@ exports.delete = (req, res, next) => {
       next(err);
     });
 };
-
-
-// exports.GetTagCount = (req, res, next) => {
-// //   [{
-// //     $match: {
-// //         userId: ObjectId('5cd84d0ca9349b0017bc1d54')
-// //     }
-// // }, {
-// //     $unwind: {
-// //         path: "$tags"
-// //     }
-// // }, {
-// //     $group: {
-// //         _id: "$tags",
-// //         count: {
-// //             $sum: 1
-// //         }
-// //     }
-// // }]
-// }
-
-// const statusList = [
-//   { key: 0, name: 'Owned' },
-//   { key: 1, name: 'For Sale' },
-//   { key: 2, name: 'Sold' },
-//   { key: 3, name: 'Stolen' },
-//   { key: 4, name: 'Wanted' },
-//   { key: 5, name: 'Recycled' },
-//   { key: 6, name: 'Trashed' },
-//   { key: 7, name: 'Donated' },
-//   { key: 99, name: 'Other' }
-// ]

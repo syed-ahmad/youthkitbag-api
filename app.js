@@ -29,7 +29,7 @@ const s3Storage = multerS3({
     cb(null, {fieldName: file.fieldname});
   },
   key: function (req, file, cb) {
-    cb(null, uuidv4() + '-' + file.originalname);
+    cb(null, 'ykb-' + uuidv4() + '-' + file.originalname);
   }
 });
 
@@ -44,7 +44,8 @@ const imagesFilter = (req, file, cb) => {
 app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use(multer({storage: s3Storage, limits: { fileSize: 512000 }, fileFilter: imagesFilter}).array('photos', 20));
+
+app.use(multer({storage: s3Storage, limits: { fileSize: 512000 }, fileFilter: imagesFilter}).single('photo'));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -61,7 +62,7 @@ const corsOptions = {
 app.use('/', cors(corsOptions), rootRoutes);
 
 app.use((error, req, res, next) => {
-  //console.log('ERROR', error);
+  console.log('ERROR', error);
   const status = error.statusCode || 400;
   const message = error.message;
   const errors = error.errors || [];
