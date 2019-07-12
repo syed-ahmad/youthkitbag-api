@@ -61,7 +61,7 @@ const corsOptions = {
 app.use('/', cors(corsOptions), rootRoutes);
 
 app.use((error, req, res, next) => {
-  console.log('ERROR', error);
+  //console.log('ERROR', error);
   const status = error.statusCode || 400;
   const message = error.message;
   const errors = error.errors || [];
