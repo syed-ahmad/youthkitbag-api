@@ -1,5 +1,6 @@
 const ObjectId = require('mongoose').Types.ObjectId; 
 const Kit = require('../models/kit');
+const Photo = require('../models/photo');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 const awsHelper = require('../util/aws-helper');
@@ -97,11 +98,16 @@ exports.add = (req, res, next) => {
   });
   
   let newKit;
+  const imageIds = images.map(i => _id );
+  console.log(imageIds);
 
   kit
     .save()
     .then(result => {
       newKit = result;
+      Photo
+        .find({ _id: { $in: imageIds}})
+        .updateMany({ sourceId: result._id, sourceType: 'kit' });
       User
         .findById(req.userId)
         .then (user => { 
@@ -224,6 +230,9 @@ exports.edit = (req, res, next) => {
     });
   }
 
+  const imageIds = images.map(i => i._id );
+  console.log(imageIds);
+
   Kit.findById(kitId)
     .then(kit => {
       if (!kit) {
@@ -252,6 +261,9 @@ exports.edit = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
+      Photo
+        .find({ _id: { $in: imageIds}})
+        .updateMany({ sourceId: result._id, sourceType: 'kit' });
       res.status(200).json({ kit: result });
     })
     .catch(err => {
