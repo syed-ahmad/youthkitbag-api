@@ -15,7 +15,11 @@ exports.add = (req, res, next) => {
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const status = req.body.status;
-  const security = req.body.security;
+
+  let security = req.body.security;
+  if (security) {
+    security = security.map(s => s.trim());
+  }
 
   let purchases = req.body.purchases;
   if (purchases) {
@@ -54,9 +58,15 @@ exports.add = (req, res, next) => {
 
   const active = req.body.active;
 
-  const images = req.body.images;
+  const images = [
+    ...req.body.images.map(i => {
+      let image = {...i};
+      image.state = 'A';
+      return image;
+    })];
 
-  // const validation = validationResult(req);
+  console.log(images);
+    // const validation = validationResult(req);
   // let errors = [];
   // if (!validation.isEmpty()) {
   //   errors = validation.array();
@@ -98,16 +108,16 @@ exports.add = (req, res, next) => {
   });
   
   let newKit;
-  const imageIds = images.map(i => _id );
-  console.log(imageIds);
+  // const imageIds = images.map(i => i.photoId );
+  // console.log(imageIds);
 
   kit
     .save()
     .then(result => {
       newKit = result;
-      Photo
-        .find({ _id: { $in: imageIds}})
-        .updateMany({ sourceId: result._id, sourceType: 'kit' });
+      // Photo
+      //   .find({ _id: { $in: imageIds}})
+      //   .updateMany({ sourceId: result._id, sourceType: 'kit' });
       User
         .findById(req.userId)
         .then (user => { 
@@ -163,7 +173,11 @@ exports.edit = (req, res, next) => {
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const status = req.body.status;
-  const security = req.body.security;
+  
+  let security = req.body.security;
+  if (security) {
+    security = security.map(s => s.trim());
+  }
 
   let purchases = req.body.purchases;
   if (purchases) {
@@ -202,7 +216,12 @@ exports.edit = (req, res, next) => {
 
   const active = req.body.active;
 
-  const images = req.body.images;
+  const images = [
+    ...req.body.images.map(i => {
+      let image = {...i};
+      image.state = 'A';
+      return image;
+    })];
 
   const validation = validationResult(req);
   let errors = [];
@@ -230,8 +249,8 @@ exports.edit = (req, res, next) => {
     });
   }
 
-  const imageIds = images.map(i => i._id );
-  console.log(imageIds);
+  // const imageIds = images.map(i => i._id );
+  // console.log(imageIds);
 
   Kit.findById(kitId)
     .then(kit => {
@@ -261,9 +280,9 @@ exports.edit = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
-      Photo
-        .find({ _id: { $in: imageIds}})
-        .updateMany({ sourceId: result._id, sourceType: 'kit' });
+      // Photo
+      //   .find({ _id: { $in: imageIds}})
+      //   .updateMany({ sourceId: result._id, sourceType: 'kit' });
       res.status(200).json({ kit: result });
     })
     .catch(err => {

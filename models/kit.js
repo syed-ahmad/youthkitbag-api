@@ -17,7 +17,7 @@ const kitSchema = new Schema({
     type: String,
     default: 'owned'
   },
-  security: String,
+  security: [String],
   purchases: [
     {
       price : {
@@ -59,7 +59,11 @@ const kitSchema = new Schema({
       imageUrl: {
         type: String,
         required: true
-      }  
+      },
+      state: {
+        type: String,
+        required: true
+      }
     }  
   ],
   activitys: [String],
