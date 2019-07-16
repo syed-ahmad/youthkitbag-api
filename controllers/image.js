@@ -67,7 +67,7 @@ exports.add = (req, res, next) => {
         throw error;
       }
 
-      // Need to save all the photos that were uploaded - or do I restrict to one per time.
+      // Only one photo is uploaded per request
       const photo = new Photo({
         image: image.key,
         imageUrl: image.location,
