@@ -59,13 +59,21 @@ exports.add = (req, res, next) => {
   const active = req.body.active;
 
   const images = [
-    ...req.body.images.map(i => {
-      let image = {...i};
-      image.state = 'A';
-      return image;
+    ...req.body.images.filter(i => {
+      if (i.state !== 'D') {
+        let image = {...i};
+        image.state = 'A';
+        return image;  
+      }
     })];
 
-  console.log(images);
+  const imagesToDelete = [
+    ...req.body.images.filter(i => {
+      if (i.state === 'D') {
+        return {...i};
+      }
+    })];
+
     // const validation = validationResult(req);
   // let errors = [];
   // if (!validation.isEmpty()) {
@@ -110,6 +118,10 @@ exports.add = (req, res, next) => {
   let newKit;
   // const imageIds = images.map(i => i.photoId );
   // console.log(imageIds);
+
+  imagesToDelete.forEach(i => {
+    awsHelper.deleteImage(i.image);
+  });
 
   kit
     .save()
@@ -217,10 +229,19 @@ exports.edit = (req, res, next) => {
   const active = req.body.active;
 
   const images = [
-    ...req.body.images.map(i => {
-      let image = {...i};
-      image.state = 'A';
-      return image;
+    ...req.body.images.filter(i => {
+      if (i.state !== 'D') {
+        let image = {...i};
+        image.state = 'A';
+        return image;  
+      }
+    })];
+
+  const imagesToDelete = [
+    ...req.body.images.filter(i => {
+      if (i.state === 'D') {
+        return {...i};
+      }
     })];
 
   const validation = validationResult(req);
@@ -249,8 +270,9 @@ exports.edit = (req, res, next) => {
     });
   }
 
-  // const imageIds = images.map(i => i._id );
-  // console.log(imageIds);
+  imagesToDelete.forEach(i => {
+    awsHelper.deleteImage(i.image);
+  });
 
   Kit.findById(kitId)
     .then(kit => {
