@@ -58,21 +58,12 @@ exports.add = (req, res, next) => {
 
   const active = req.body.active;
 
-  const images = [
-    ...req.body.images.filter(i => {
-      if (i.state !== 'D') {
-        let image = {...i};
-        image.state = 'A';
-        return image;  
-      }
-    })];
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
 
-  const imagesToDelete = [
-    ...req.body.images.filter(i => {
-      if (i.state === 'D') {
-        return {...i};
-      }
-    })];
+  const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
     // const validation = validationResult(req);
   // let errors = [];
@@ -228,21 +219,12 @@ exports.edit = (req, res, next) => {
 
   const active = req.body.active;
 
-  const images = [
-    ...req.body.images.filter(i => {
-      if (i.state !== 'D') {
-        let image = {...i};
-        image.state = 'A';
-        return image;  
-      }
-    })];
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
 
-  const imagesToDelete = [
-    ...req.body.images.filter(i => {
-      if (i.state === 'D') {
-        return {...i};
-      }
-    })];
+  const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   const validation = validationResult(req);
   let errors = [];
