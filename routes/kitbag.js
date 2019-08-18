@@ -13,10 +13,12 @@ const kitValidation = [
 
 // all routes in this module require authentication
 router.post('/kits', kitValidation, kitController.add);
+router.get('/kits/containers', kitValidation, kitController.getContainers);
 router.put('/kits/:kitId', kitValidation, kitController.edit);
 router.delete('/kits/:kitId', kitController.delete);
 router.get('/kits/:kitId', kitController.getItem);
 router.get('/kits', kitController.getItems);
+
 
 //router.get('/forsales/add/:kitId', forsaleController.getAdd);
 router.post('/forsales', kitValidation, forsaleController.add);

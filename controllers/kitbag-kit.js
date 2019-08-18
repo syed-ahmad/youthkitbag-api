@@ -5,7 +5,7 @@ const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 const awsHelper = require('../util/aws-helper');
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'tag', value: 'Tag' }, { key: 'inactive', value: 'All Inactive' } ];
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'tag', value: 'Tag' }, { key: 'container', value: 'Container' }, { key: 'inactive', value: 'All Inactive' } ];
 
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
@@ -322,6 +322,10 @@ exports.getItems = (req, res, next) => {
         query = { userId: req.userId, active: true, tags: search };
         break;
       }
+      case 'container': {
+        query = { userId: req.userId, active: true, inbag: { $elemMatch: { location: { $regex : `.*${search}.*`, $options: 'i' }, quantity: { $gt: 0 } } } };
+        break;
+      }
       case 'inactive': {
         query = { userId: req.userId, active: false };
         break;
@@ -346,6 +350,16 @@ exports.getItems = (req, res, next) => {
         .limit(itemsPerPage);
     })
     .then(kits => {
+      if (by === 'container') {
+        var newKits = [];
+        kits.forEach(function (k) {
+          newKits.push({ _id: k._id, title: k.title, subtitle: k.subtitle, images: k.images, inbag: k.inbag.filter(function(i) {
+            return i.location.toLowerCase() === search.toLowerCase();
+          })});
+        });
+        kits = newKits;
+        console.log(newKits);
+      }
       res.status(200).json({
         kits: kits,
         filter: {
@@ -415,3 +429,25 @@ exports.delete = (req, res, next) => {
       next(err);
     });
 };
+
+// GET request to return page of items from users kitbag
+exports.getContainers = (req, res, next) => {
+
+  let query = { userId: req.userId, active: true, tags: 'container' };
+  let orderby = { title: 1 };
+
+  Kit
+    .find(query).sort(orderby)
+    .then(kits => {
+      res.status(200).json({
+        containers: kits.map(k => k.title)
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
