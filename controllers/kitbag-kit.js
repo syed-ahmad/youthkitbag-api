@@ -9,8 +9,6 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
-  console.log('req.body', req.body);
-
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
@@ -147,7 +145,7 @@ exports.getItem = (req, res, next) => {
     .findById(kitId)
     .then(kit => {
       if (!kit) {
-        const error = new Error('Kit not found');
+        const error = new Error('The requested item of kit could not be found');
         error.statusCode = 404;
         throw error;
       }

@@ -7,11 +7,12 @@ const { validationResult} = require('express-validator/check');
 // GET request to return kit item as item for sale
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
+  let thisKit;
 
   Trade.findOne({ sourceId: new ObjectId(kitId) })
-    .then(currentSale => {
-      if (currentSale) {
-        const error = new Error('The requested item of kit is already listed for sale');
+    .then(currentTrade => {
+      if (currentTrade) {
+        const error = new Error('The requested item of kit is already listed for trade');
         error.statusCode = 500;
         throw error;
       }
@@ -24,34 +25,39 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to sell this item of kit');
+        const error = new Error('You are not authorized to trade this item of kit');
         error.statusCode = 403;
         throw error;
       }
       if (kit.status !== 0) {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for sale');
+        console.log('STATUS',kit.status);
+        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
         error.statusCode = 500;
         throw error;
       }
-      if (req.user.package.max.trade <= req.user.package.size.trade) {
+      thisKit = kit;
+      return User.findById(req.userId);
+    })
+    .then (user => { 
+      if (user.package.max.trade <= user.package.size.trade) {
         const error = new Error('You have already reached the limits of your trade package. Please upgrade to sell more items.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
         trade: {
-          title: kit.title,
-          subtitle: kit.subtitle,
-          description: kit.description,
-          condition: kit.inbag.length > 0 ? kit.inbag[0].condition : 'used',
-          askingPrice: 0.00,
-          images: kit.images,
-          activitys: kit.activitys,
+          title: thisKit.title,
+          subtitle: thisKit.subtitle,
+          description: thisKit.description,
+          condition: thisKit.inbag.length > 0 ? thisKit.inbag[0].condition : 'used',
+          askingPrice: 0.01,
+          images: thisKit.images,
+          activitys: thisKit.activitys,
           hasSold: false,
-          sourceId: kit._id,
+          sourceId: thisKit._id,
           userId: req.userId
         },
-        origImages: JSON.stringify(kit.images),
+        origImages: JSON.stringify(thisKit.images),
         errors: [],
         editing: false
       });
@@ -137,8 +143,8 @@ exports.add = (req, res, next) => {
   let newTrade;
 
   Trade.findOne({ sourceId: new ObjectId(sourceId) })
-    .then(currentSale => {
-      if (currentSale) {
+    .then(currentTrade => {
+      if (currentTrade) {
         const error = new Error('The requested item of kit is already listed for sale');
         error.statusCode = 500;
         throw error;
