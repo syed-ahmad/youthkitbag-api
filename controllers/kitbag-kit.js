@@ -299,6 +299,7 @@ exports.edit = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getItems = (req, res, next) => {
+  console.log(req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;

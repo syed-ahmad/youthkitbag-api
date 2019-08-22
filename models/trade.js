@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const forsaleSchema = new Schema({
+const tradeSchema = new Schema({
   title: {
     type: String,
     required: true
@@ -72,4 +72,4 @@ const forsaleSchema = new Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('ForSale', forsaleSchema);
+module.exports = mongoose.model('Trade', tradeSchema);

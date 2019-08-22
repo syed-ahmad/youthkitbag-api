@@ -2,8 +2,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/user');
 const Order = require('../models/order');
 
-const standardPackage = { kit: 100, forsale: 25, wanted: 25, photos: 5 };
-const premiumPackage = { kit: 1000, forsale: 100, wanted: 100, photos: 10 };
+const standardPackage = { kit: 100, trade: 25, wanted: 25, photos: 5 };
+const premiumPackage = { kit: 1000, trade: 100, wanted: 100, photos: 10 };
 
 exports.postBuyPackage = (req, res, next) => {
   const token = req.body.stripeToken;

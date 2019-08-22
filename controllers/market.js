@@ -1,4 +1,4 @@
-const ForSale = require('../models/forsale');
+const Trade = require('../models/trade');
 const Message = require('../models/message');
 const User = require('../models/user');
 
@@ -12,26 +12,26 @@ exports.createMessage = (req, res, next) => {
     return next(error);
   }
   
-  if (sourceType === 'forsale') {
-    ForSale.findById(sourceId)
-    .then(forsale => {
-      if (!forsale) {
+  if (sourceType === 'trade') {
+    Trade.findById(sourceId)
+    .then(trade => {
+      if (!trade) {
         const error = new Error('The requested item for sale could not be found');
         error.statusCode = 500;
         throw error;
       }
 
-      const itemOwner = req.userId.toString() === forsale.userId.toString();
+      const itemOwner = req.userId.toString() === trade.userId.toString();
 
       res.render('market/message', {
         pageTitle: `Create message (item: ${sourceId})`,
         path: '/market/message',
         message: {
-          subject: `Re. ${forsale.title} / ${sourceId}`,
+          subject: `Re. ${trade.title} / ${sourceId}`,
           content: '',
           sourceType: sourceType,
           sourceId: sourceId,
-          images: forsale.images,
+          images: trade.images,
           hasSent: false,
           hasRead: false
         },

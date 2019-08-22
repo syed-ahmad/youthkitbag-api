@@ -47,13 +47,13 @@ const userSchema = new Schema({
     icon: { type: String, default: 'coffee' },
     max: { 
       kit: { type: Number, default: 20 },
-      forsale: { type: Number, default: 5 },
+      trade: { type: Number, default: 5 },
       wanted: { type: Number, default: 5 },
       photos: { type: Number, default: 2 }
     },
     size: {
       kit: { type: Number, default: 0 },
-      forsale: { type: Number, default: 0 },
+      trade: { type: Number, default: 0 },
       wanted: { type: Number, default: 0 },
       photos: { type: Number, default: 0 }
     }

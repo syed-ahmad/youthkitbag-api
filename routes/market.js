@@ -1,6 +1,6 @@
 const express = require('express');
 
-const forsaleController = require('../controllers/forsale');
+const tradeController = require('../controllers/trade');
 const wantedController = require('../controllers/wanted');
 const stolenController = require('../controllers/stolen');
 const marketController = require('../controllers/market');
@@ -11,8 +11,8 @@ const router = express.Router();
 
 router.post('/create-message', isAuth, marketController.createMessage);
 
-router.get('/forsale', forsaleController.getItems);
-router.get('/forsale/:forsaleId', isAuth, forsaleController.getItem);
+router.get('/trade', tradeController.getItems);
+router.get('/trade/:tradeId', isAuth, tradeController.getItem);
 
 router.get('/wanted', wantedController.getItems);
 router.get('/wanted/:wantedId', isAuth, wantedController.getItem);

@@ -1,17 +1,17 @@
 const ObjectId = require('mongoose').Types.ObjectId; 
 const Kit = require('../models/kit');
-const Wanted = require('../models/wanted');
+const Trade = require('../models/trade');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 
-// GET request to return kit item as item for wanted
+// GET request to return kit item as item for sale
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
 
-  Wanted.findOne({ sourceId: new ObjectId(kitId) })
-    .then(currentWanted => {
-      if (currentWanted) {
-        const error = new Error('The requested item of kit is already listed wanted');
+  Trade.findOne({ sourceId: new ObjectId(kitId) })
+    .then(currentSale => {
+      if (currentSale) {
+        const error = new Error('The requested item of kit is already listed for sale');
         error.statusCode = 500;
         throw error;
       }
@@ -24,25 +24,30 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to set this item of kit to wanted');
+        const error = new Error('You are not authorized to sell this item of kit');
         error.statusCode = 403;
         throw error;
       }
-      if (req.user.package.max.wanted <= req.user.package.size.wanted) {
-        const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
+      if (kit.status !== 0) {
+        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for sale');
+        error.statusCode = 500;
+        throw error;
+      }
+      if (req.user.package.max.trade <= req.user.package.size.trade) {
+        const error = new Error('You have already reached the limits of your trade package. Please upgrade to sell more items.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        wanted: {
+        trade: {
           title: kit.title,
           subtitle: kit.subtitle,
           description: kit.description,
           condition: kit.inbag.length > 0 ? kit.inbag[0].condition : 'used',
-          offerPrice: 0.00,
+          askingPrice: 0.00,
           images: kit.images,
           activitys: kit.activitys,
-          obtained: false,
+          hasSold: false,
           sourceId: kit._id,
           userId: req.userId
         },
@@ -59,20 +64,20 @@ exports.getAdd = (req, res, next) => {
     });
 };
 
-// POST request to add a new item into wanted
+// POST request to add a new item into trade
 exports.add = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const condition = req.body.condition;
-  const offerPrice = +req.body.offerPrice;
+  const askingPrice = +req.body.askingPrice;
 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.split(',').map(s => s.trim().toLowerCase());
   }
 
-  const obtained = req.body.obtained;
+  const hasSold = req.body.hasSold;
   const sourceId = req.body.sourceId;
 
   let images = req.files;
@@ -93,14 +98,14 @@ exports.add = (req, res, next) => {
   }
   if (errors.length) {
     return res.status(422).json({
-      wanted: {
+      trade: {
         title: title,
         subtitle: subtitle,
         description: description,
-        offerPrice: offerPrice,
+        askingPrice: askingPrice,
         condition: coindition,
         activitys: activitys,
-        obtained: obtained,
+        hasSold: hasSold,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -109,32 +114,32 @@ exports.add = (req, res, next) => {
     });
   }
 
-  const wanted = new Wanted({
+  const trade = new Trade({
     title: title,
     subtitle: subtitle,
     description: description,
     condition: condition,
-    offerPrice: offerPrice,
+    askingPrice: askingPrice,
     activitys: activitys,
-    obtained: obtained,
+    hasSold: hasSold,
     sourceId: sourceId,
     userId: req.userId
   });
 
 
   if (images.length > 0) {
-    wanted.images = images;
+    trade.images = images;
   } else {
     //TODO: Can we make copies of images on s3 to remove dependency
-    wanted.images = JSON.parse(origImages);
+    trade.images = JSON.parse(origImages);
   }
 
-  let newWanted;
+  let newTrade;
 
-  Wanted.findOne({ sourceId: new ObjectId(sourceId) })
-    .then(currentWanted => {
-      if (currentWanted) {
-        const error = new Error('The requested item of kit is already listed wanted');
+  Trade.findOne({ sourceId: new ObjectId(sourceId) })
+    .then(currentSale => {
+      if (currentSale) {
+        const error = new Error('The requested item of kit is already listed for sale');
         error.statusCode = 500;
         throw error;
       }
@@ -147,12 +152,17 @@ exports.add = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to want this item of kit');
+        const error = new Error('You are not authorized to sell this item of kit');
         error.statusCode = 403;
         throw error;
       }
-      if (req.user.package.max.wanted <= req.user.package.size.wanted) {
-        const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
+      if (kit.status !== 0) {
+        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for sale');
+        error.statusCode = 500;
+        throw error;
+      }
+      if (req.user.package.max.trade <= req.user.package.size.trade) {
+        const error = new Error('You have already reached the limits of your trade package. Please upgrade to sell more items.');
         error.statusCode = 500;
         throw error;
       }
@@ -160,14 +170,14 @@ exports.add = (req, res, next) => {
       return kit.save();
     })
     .then(() => {
-      return wanted.save();
+      return trade.save();
     })
     .then(result => {
-      newWanted = result;
+      newTrade = result;
       return User.findById(req.userId);
     })
     .then(user => { 
-      user.package.size.wanted += 1;
+      user.package.size.trade += 1;
       return user.save();
     })
     .then(user => {
@@ -177,7 +187,7 @@ exports.add = (req, res, next) => {
       });
     })
     .then(err => {
-      res.status(201).json({ wanted: newWanted });
+      res.status(201).json({ trade: newTrade });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -187,24 +197,24 @@ exports.add = (req, res, next) => {
     });
 };
 
-// GET request to get an already existing wanted item
+// GET request to get an already existing trade item
 exports.getItem = (req, res, next) => {
-  const wantedId = req.params.wantedId;
+  const tradeId = req.params.tradeId;
 
-  Wanted.findById(wantedId)
-    .then(wanted => {
-      if (!wanted) {
-        const error = new Error('Wanted item not found');
+  Trade.findById(tradeId)
+    .then(trade => {
+      if (!trade) {
+        const error = new Error('For sale item not found');
         error.statusCode = 404;
         throw error;
       }
-      if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the wanted item');
+      if (trade.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to edit the item being sold');
         error.statusCode = 403;
         throw error;
       }
       res.status(200).json({
-        wanted: wanted,
+        trade: trade,
         origImages: JSON.stringify(trade.images),
         errors: [],
         editing: true
@@ -220,20 +230,20 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const wantedId = req.body.wantedId;
+  const tradeId = req.body.tradeId;
   const sourceId = req.body.sourceId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const condition = req.body.condition;
-  const offerPrice = +req.body.offerPrice;
+  const askingPrice = +req.body.askingPrice;
 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.split(',').map(s => s.trim().toLowerCase());
   }
 
-  const obtained = req.body.obtained;
+  const hasSold = req.body.hasSold;
 
   let images = req.files;
   if (images && images.length > 0) {
@@ -252,15 +262,15 @@ exports.edit = (req, res, next) => {
   }
   if (errors.length) {
     return res.status(422).json({
-      wanted: {
-        _id: wantedId,
+      trade: {
+        _id: tradeId,
         title: title,
         subtitle: subtitle,
         description: description,
-        offerPrice: offerPrice,
+        askingPrice: askingPrice,
         condition: condition,
         activitys: activitys,
-        obtained: obtained,
+        hasSold: hasSold,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -269,36 +279,36 @@ exports.edit = (req, res, next) => {
     });
   }
 
-  Wanted.findById(wantedId)
-    .then(wanted => {
-      if (!wanted) {
-        const error = new Error('Wanted item not found');
+  Trade.findById(tradeId)
+    .then(trade => {
+      if (!trade) {
+        const error = new Error('For sale item not found');
         error.statusCode = 404;
         throw error;
       }
-      if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the kit wanted');
+      if (trade.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to edit the kit being sold');
         error.statusCode = 403;
         throw error;
       }
-      wanted.title = title;
-      wanted.subtitle = subtitle;
-      wanted.description = description;
-      wanted.offerPrice = offerPrice;
-      wanted.condition = condition;
-      wanted.activitys = activitys;
-      wanted.obtained = obtained;
+      trade.title = title;
+      trade.subtitle = subtitle;
+      trade.description = description;
+      trade.askingPrice = askingPrice;
+      trade.condition = condition;
+      trade.activitys = activitys;
+      trade.hasSold = hasSold;
       if (images.length > 0) {
-        wanted.images.forEach((img, i) => {
+        trade.images.forEach((img, i) => {
           //TODO: 
           //fileHelper.checkSourceAndDeleteImage(img.image);
         });
-        wanted.images = images;
+        trade.images = images;
       }
-      return wanted.save();
+      return trade.save()
     })
     .then(result => {
-      res.status(200).json({ wanted: result });
+      res.status(200).json({ trade: result });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -316,25 +326,25 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, obtained: (by !== 'obtained') };
+  let query = { userId: req.userId, hasSold: (by === 'hassold') };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { userId: req.userId, obtained: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = { userId: req.userId, hasSold: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { userId: req.userId, obtained: false, activitys: search };
+        query = { userId: req.userId, hasSold: false, activitys: search };
         break;
       }
-      case 'obtained': {
-        query = { userId: req.userId, obtained: true };
+      case 'hasSold': {
+        query = { userId: req.userId, hasSold: true };
         break;
       }
       default: {
-        query = { $and: [ { userId: req.userId }, { obtained: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { userId: req.userId }, { hasSold: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
@@ -342,19 +352,19 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Wanted
+  Trade
     .find(query)
     .countDocuments()
     .then(numberOfItems => {
       totalItems = numberOfItems;
-      return Wanted.find(query)
+      return Trade.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
-    .then(wanteds => {
+    .then(trades => {
       res.status(200).json({
-        wanteds: wanteds,
+        trades: trades,
         filter: {
           by: by,
           search: search  
@@ -380,22 +390,22 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to delete wanted item from kitbag
+// POST request to delete trade item from kitbag
 exports.delete = (req, res, next) => {
-  const wantedId = req.body.wantedId;
+  const tradeId = req.body.tradeId;
   const confirm = req.body.confirm;
 
-  let wantedItem = {};
+  let tradeItem = {};
 
-  Wanted.findById(wantedId)
-    .then(wanted => {
-      if (!wanted) {
-        const error = new Error('The requested wanted item could not be found');
+  Trade.findById(tradeId)
+    .then(trade => {
+      if (!trade) {
+        const error = new Error('The requested sale item could not be found');
         error.statusCode = 404;
         throw error;
       }
-      if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this wanted item');
+      if (trade.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to delete this sale item');
         error.statusCode = 403;
         throw error;
       }
@@ -404,8 +414,8 @@ exports.delete = (req, res, next) => {
         error.statusCode = 400;
         throw error;
       }
-      wantedItem = wanted;
-      return Kit.findById(wanted.sourceId);
+      tradeItem = trade;
+      return Kit.findById(trade.sourceId);
     })
     .then(kit => {
       if (!kit) {
@@ -422,21 +432,21 @@ exports.delete = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
-      if (wantedItem.images) {
-        wantedItem.images.forEach((img, i) => {
+      if (tradeItem.images) {
+        tradeItem.images.forEach((img, i) => {
           //TODO: 
           //fileHelper.checkSourceAndDeleteImage(img.image);
         });
       }
-      return Wanted.deleteOne({ _id: wantedId, userId: req.userId });
+      return Trade.deleteOne({ _id: tradeId, userId: req.userId });
     })
     .then(result => {
       return User.findById(req.userId);
     })
     .then(user => { 
-      user.package.size.wanted -= 1;
-      if (user.package.size.wanted < 0) {
-        user.package.size.wanted = 0;
+      user.package.size.trade -= 1;
+      if (user.package.size.trade < 0) {
+        user.package.size.trade = 0;
       }
       return user.save();
     })
@@ -447,7 +457,7 @@ exports.delete = (req, res, next) => {
       });
     })
     .then(err => {
-      res.status(200).json({ message: 'Wanted item deleted'});
+      res.status(200).json({ message: 'For sale item deleted' });
     })
     .catch(err => {
       if (!err.statusCode) {

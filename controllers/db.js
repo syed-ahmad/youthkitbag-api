@@ -1,6 +1,6 @@
 const User = require('../models/user');
 const Kit = require('../models/kit');
-const ForSale = require('../models/forsale');
+const Trade = require('../models/trade');
 const List = require('../models/list');
 const Message = require('../models/message');
 const Order = require('../models/order');
@@ -23,8 +23,8 @@ exports.getCollection = (req, res, next) => {
         return User.find();
       case 'kit':
         return Kit.find();
-      case 'forsale':
-        return ForSale.find();
+      case 'trade':
+        return Trade.find();
       case 'list':
         return List.find();
       case 'message':

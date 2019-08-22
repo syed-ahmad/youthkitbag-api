@@ -1,19 +1,19 @@
-const ForSale = require('../models/forsale');
+const Trade = require('../models/trade');
 
-// GET request a forsale item
+// GET request a trade item
 exports.getItem = (req,res, next) => {
-  const forsaleId = req.params.forsaleid;
+  const tradeId = req.params.tradeid;
   
-  ForSale
-    .findById(forsaleId)
-    .then(forsale => {
-      if (!forsale) {
+  Trade
+    .findById(tradeId)
+    .then(trade => {
+      if (!trade) {
         const error = new Error('The requested for sale item of kit could not be found');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        forsale: forsale
+        trade: trade
       });
     })
     .catch(err => {
@@ -24,7 +24,7 @@ exports.getItem = (req,res, next) => {
     });
 };
 
-// GET request forsale items based on search/pagination
+// GET request trade items based on search/pagination
 exports.getItems = (req, res, next) => {
   let by = req.query.by;
   let search = req.query.search;
@@ -58,19 +58,19 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  ForSale
+  Trade
     .find(query)
     .countDocuments()
-    .then(numberOfForsales => {
-      totalItems = numberOfForsales;
-      return ForSale.find(query)
+    .then(numberOfTrades => {
+      totalItems = numberOfTrades;
+      return Trade.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
-    .then(forsales => {
+    .then(trades => {
       res.status(200).json({
-        forsales: forsales,
+        trades: trades,
         filter: {
           by: by,
           search: search  
