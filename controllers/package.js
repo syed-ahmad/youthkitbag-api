@@ -34,7 +34,7 @@ exports.postBuyPackage = (req, res, next) => {
     })
     .then(charge => {
       if (!charge || charge.outcome.type != 'authorized') {
-        throw new Error(charge.outcome.seller_message);
+        throw new Error(charge.outcome.tradeer_message);
       }
       return User.findById(req.session.user._id);
     })

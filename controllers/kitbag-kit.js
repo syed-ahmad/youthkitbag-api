@@ -166,9 +166,6 @@ exports.getItem = (req, res, next) => {
 
 // PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
-  console.log('req.body', req.body);
-  console.log('req.params', req.params);
-
   const kitId = req.params.kitId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
@@ -297,7 +294,6 @@ exports.edit = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getItems = (req, res, next) => {
-  console.log(req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
@@ -357,7 +353,6 @@ exports.getItems = (req, res, next) => {
           })});
         });
         kits = newKits;
-        console.log(newKits);
       }
       res.status(200).json({
         kits: kits,

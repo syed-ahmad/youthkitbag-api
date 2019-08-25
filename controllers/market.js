@@ -16,7 +16,7 @@ exports.createMessage = (req, res, next) => {
     Trade.findById(sourceId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('The requested item for sale could not be found');
+        const error = new Error('The requested item for trade could not be found');
         error.statusCode = 500;
         throw error;
       }

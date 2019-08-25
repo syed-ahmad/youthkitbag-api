@@ -14,8 +14,8 @@ const kitSchema = new Schema({
     type: String
   },
   status: {
-    type: Number,
-    default: 0
+    type: String,
+    default: 'owned'
   },
   security: [String],
   purchases: [

@@ -98,7 +98,7 @@ exports.add = (req, res, next) => {
         subtitle: subtitle,
         description: description,
         offerPrice: offerPrice,
-        condition: coindition,
+        condition: condition,
         activitys: activitys,
         obtained: obtained,
         sourceId: sourceId,

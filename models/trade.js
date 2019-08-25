@@ -41,25 +41,32 @@ const tradeSchema = new Schema({
       }  
     }  
   ],
-  sold: {
-    soldOn: {
+  traded: {
+    tradedOn: {
       type: Date
     },
     toUserId:  {
       type: Schema.Types.ObjectId,
       ref: 'User'
     },
-    salePrice: {
+    tradePrice: {
       type: Number
     },
-    completed: {
+    complete: {
       type: Boolean
     }
   },
   activitys: [String],
-  hasSold: {
-    type: Boolean
-  },
+  groups: [
+    {
+      name: {
+        type: String
+      },
+      available: {
+        type: Date
+      }
+    }
+  ],
   sourceId: {
     type: Schema.Types.ObjectId,
     ref: 'Kit',

@@ -8,7 +8,7 @@ exports.getItem = (req,res, next) => {
     .findById(tradeId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('The requested for sale item of kit could not be found');
+        const error = new Error('The requested for trade item of kit could not be found');
         error.statusCode = 500;
         throw error;
       }
@@ -32,25 +32,25 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { hassold: (by === 'hassold') };
+  let query = { hasbeentraded: (by === 'hasbeentraded') };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { hassold: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = { hasbeentraded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { hassold: false, activitys: search };
+        query = { hasbeentraded: false, activitys: search };
         break;
       }
-      case 'hassold': {
-        query = { hassold: true };
+      case 'hasbeentraded': {
+        query = { hasbeentraded: true };
         break;
       }
       default: {
-        query = { $and: [ { hassold: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { hasbeentraded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
