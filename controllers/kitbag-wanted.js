@@ -2,16 +2,19 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Wanted = require('../models/wanted');
 const User = require('../models/user');
-const { validationResult} = require('express-validator/check');
+const { validationResult } = require('express-validator/check');
+
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'obtained', value: 'All Recovered' } ];
 
 // GET request to return kit item as item for wanted
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
+  let thisKit;
 
   Wanted.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentWanted => {
-      if (currentWanted) {
-        const error = new Error('The requested item of kit is already listed wanted');
+      if (currentWanted && !currentWanted.obtained) {
+        const error = new Error('The requested item of kit is already actively listed as wanted');
         error.statusCode = 500;
         throw error;
       }
@@ -24,29 +27,31 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to set this item of kit to wanted');
+        const error = new Error('You are not authorized to report this item of kit as wanted');
         error.statusCode = 403;
         throw error;
       }
-      if (req.user.package.max.wanted <= req.user.package.size.wanted) {
-        const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
+      thisKit = kit;
+      return User.findById(req.userId);
+    })
+    .then (user => { 
+      if (!user) {
+        const error = new Error('User not identified.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
         wanted: {
-          title: kit.title,
-          subtitle: kit.subtitle,
-          description: kit.description,
-          condition: kit.inbag.length > 0 ? kit.inbag[0].condition : 'used',
-          offerPrice: 0.00,
-          images: kit.images,
-          activitys: kit.activitys,
+          title: thisKit.title,
+          subtitle: thisKit.subtitle,
+          description: thisKit.description,
+          images: thisKit.images,
+          activitys: thisKit.activitys,
           obtained: false,
-          sourceId: kit._id,
+          sourceId: thisKit._id,
           userId: req.userId
         },
-        origImages: JSON.stringify(kit.images),
+        origImages: JSON.stringify(thisKit.images),
         errors: [],
         editing: false
       });
@@ -64,26 +69,21 @@ exports.add = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const condition = req.body.condition;
+  const location = req.body.location;
   const offerPrice = +req.body.offerPrice;
 
   let activitys = req.body.activitys;
   if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
+    activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
   const obtained = req.body.obtained;
   const sourceId = req.body.sourceId;
 
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
-  }
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
   let origImages = req.body.origImages;
  
   const validation = validationResult(req);
@@ -97,10 +97,7 @@ exports.add = (req, res, next) => {
         title: title,
         subtitle: subtitle,
         description: description,
-        offerPrice: offerPrice,
-        condition: condition,
         activitys: activitys,
-        obtained: obtained,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -113,7 +110,7 @@ exports.add = (req, res, next) => {
     title: title,
     subtitle: subtitle,
     description: description,
-    condition: condition,
+    location: location,
     offerPrice: offerPrice,
     activitys: activitys,
     obtained: obtained,
@@ -130,11 +127,16 @@ exports.add = (req, res, next) => {
   }
 
   let newWanted;
+  let thisUser;
 
-  Wanted.findOne({ sourceId: new ObjectId(sourceId) })
+  User.findById(req.userId)
+    .then (user => {
+      thisUser = user;
+      return Wanted.findOne({ sourceId: new ObjectId(sourceId) });
+    }) 
     .then(currentWanted => {
-      if (currentWanted) {
-        const error = new Error('The requested item of kit is already listed wanted');
+      if (currentWanted && !currentWanted.obtained) {
+        const error = new Error('The requested item of kit is already actively listed as wanted');
         error.statusCode = 500;
         throw error;
       }
@@ -147,36 +149,14 @@ exports.add = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to want this item of kit');
+        const error = new Error('You are not authorized to report this item of kit as wanted');
         error.statusCode = 403;
         throw error;
       }
-      if (req.user.package.max.wanted <= req.user.package.size.wanted) {
-        const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
-        error.statusCode = 500;
-        throw error;
-      }
-      kit.status = 1;
-      return kit.save();
-    })
-    .then(() => {
       return wanted.save();
     })
     .then(result => {
       newWanted = result;
-      return User.findById(req.userId);
-    })
-    .then(user => { 
-      user.package.size.wanted += 1;
-      return user.save();
-    })
-    .then(user => {
-      req.session.user = user;
-      return req.session.save(err => {
-        console.log(err);
-      });
-    })
-    .then(err => {
       res.status(201).json({ wanted: newWanted });
     })
     .catch(err => {
@@ -191,7 +171,8 @@ exports.add = (req, res, next) => {
 exports.getItem = (req, res, next) => {
   const wantedId = req.params.wantedId;
 
-  Wanted.findById(wantedId)
+  Wanted
+    .findById(wantedId)
     .then(wanted => {
       if (!wanted) {
         const error = new Error('Wanted item not found');
@@ -199,16 +180,11 @@ exports.getItem = (req, res, next) => {
         throw error;
       }
       if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the wanted item');
+        const error = new Error('You are not authorized to edit the item listed as wanted');
         error.statusCode = 403;
         throw error;
       }
-      res.status(200).json({
-        wanted: wanted,
-        origImages: JSON.stringify(trade.images),
-        errors: [],
-        editing: true
-      });
+      res.status(200).json(wanted);
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -220,30 +196,33 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const wantedId = req.body.wantedId;
-  const sourceId = req.body.sourceId;
+  const wantedId = req.body._id;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const condition = req.body.condition;
+  const location = req.body.location;
   const offerPrice = +req.body.offerPrice;
+  const obtained = req.body.obtained;
 
   let activitys = req.body.activitys;
   if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
+    activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
-  const obtained = req.body.obtained;
-
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
+  let offers = req.body.offers;
+  if (offers) {
+    offers = offers
+      .map(i => {
+        let item = {...i};
+        item.fromUserId = req.userId;
+        return item;
+      });
   }
+  
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
   
   const validation = validationResult(req);
   let errors = [];
@@ -257,10 +236,7 @@ exports.edit = (req, res, next) => {
         title: title,
         subtitle: subtitle,
         description: description,
-        offerPrice: offerPrice,
-        condition: condition,
         activitys: activitys,
-        obtained: obtained,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -277,25 +253,22 @@ exports.edit = (req, res, next) => {
         throw error;
       }
       if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the kit wanted');
+        const error = new Error('You are not authorized to edit the kit reported as wantedd');
         error.statusCode = 403;
         throw error;
       }
       wanted.title = title;
       wanted.subtitle = subtitle;
       wanted.description = description;
+      wanted.location = location;
       wanted.offerPrice = offerPrice;
-      wanted.condition = condition;
+      wanted.offers = offers;
       wanted.activitys = activitys;
       wanted.obtained = obtained;
       if (images.length > 0) {
-        wanted.images.forEach((img, i) => {
-          //TODO: 
-          //fileHelper.checkSourceAndDeleteImage(img.image);
-        });
         wanted.images = images;
       }
-      return wanted.save();
+      return wanted.save()
     })
     .then(result => {
       res.status(200).json({ wanted: result });
@@ -316,7 +289,7 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, obtained: (by !== 'obtained') };
+  let query = { userId: req.userId, obtained: (by === 'obtained') };
 
   if (search) {
     search = search.toLowerCase();
@@ -340,6 +313,7 @@ exports.getItems = (req, res, next) => {
     }
   }
 
+  console.log(query);
   let orderby = { updatedAt: -1 };
 
   Wanted
@@ -357,7 +331,8 @@ exports.getItems = (req, res, next) => {
         wanteds: wanteds,
         filter: {
           by: by,
-          search: search  
+          search: search,
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,
@@ -395,7 +370,7 @@ exports.delete = (req, res, next) => {
         throw error;
       }
       if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this wanted item');
+        const error = new Error('You are not authorized to delete this item');
         error.statusCode = 403;
         throw error;
       }
@@ -418,36 +393,10 @@ exports.delete = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      kit.status = 0;
-      return kit.save();
-    })
-    .then(result => {
-      if (wantedItem.images) {
-        wantedItem.images.forEach((img, i) => {
-          //TODO: 
-          //fileHelper.checkSourceAndDeleteImage(img.image);
-        });
-      }
       return Wanted.deleteOne({ _id: wantedId, userId: req.userId });
     })
     .then(result => {
-      return User.findById(req.userId);
-    })
-    .then(user => { 
-      user.package.size.wanted -= 1;
-      if (user.package.size.wanted < 0) {
-        user.package.size.wanted = 0;
-      }
-      return user.save();
-    })
-    .then(user => {
-      req.session.user = user;
-      return req.session.save(err => {
-        console.log(err);
-      });
-    })
-    .then(err => {
-      res.status(200).json({ message: 'Wanted item deleted'});
+      res.status(200).json({ message: 'Wanted item deleted' });
     })
     .catch(err => {
       if (!err.statusCode) {

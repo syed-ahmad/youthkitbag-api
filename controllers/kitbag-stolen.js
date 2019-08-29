@@ -1,17 +1,20 @@
 const ObjectId = require('mongoose').Types.ObjectId; 
 const Kit = require('../models/kit');
-const Trade = require('../models/trade');
+const Stolen = require('../models/stolen');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 
-// GET request to return kit item as item for trade
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'recovered', value: 'All Recovered' } ];
+
+// GET request to return kit item as item for stolen
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
+  let thisKit;
 
-  Trade.findOne({ sourceId: new ObjectId(kitId) })
-    .then(currentSale => {
-      if (currentSale) {
-        const error = new Error('The requested item of kit is already listed for trade');
+  Stolen.findOne({ sourceId: new ObjectId(kitId) })
+    .then(currentStolen => {
+      if (currentStolen) {
+        const error = new Error('The requested item of kit is already listed for stolen');
         error.statusCode = 500;
         throw error;
       }
@@ -24,34 +27,38 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to trade this item of kit');
+        const error = new Error('You are not authorized to report this item of kit as stolen');
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 0) {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
+      if (kit.status !== 'owned') {
+        console.log('STATUS',kit.status);
+        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
       }
-      if (req.user.package.max.trade <= req.user.package.size.trade) {
-        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
+      thisKit = kit;
+      return User.findById(req.userId);
+    })
+    .then (user => { 
+      if (!user) {
+        const error = new Error('User not identified.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        trade: {
-          title: kit.title,
-          subtitle: kit.subtitle,
-          description: kit.description,
-          condition: kit.inbag.length > 0 ? kit.inbag[0].condition : 'used',
-          askingPrice: 0.00,
-          images: kit.images,
-          activitys: kit.activitys,
-          hasBeenTraded: false,
-          sourceId: kit._id,
+        stolen: {
+          title: thisKit.title,
+          subtitle: thisKit.subtitle,
+          description: thisKit.description,
+          images: thisKit.images,
+          activitys: thisKit.activitys,
+          security: thisKit.security,
+          recovered: false,
+          sourceId: thisKit._id,
           userId: req.userId
         },
-        origImages: JSON.stringify(kit.images),
+        origImages: JSON.stringify(thisKit.images),
         errors: [],
         editing: false
       });
@@ -64,32 +71,32 @@ exports.getAdd = (req, res, next) => {
     });
 };
 
-// POST request to add a new item into trade
+// POST request to add a new item into stolen
 exports.add = (req, res, next) => {
-  console.log('ADD');
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const condition = req.body.condition;
-  const askingPrice = +req.body.askingPrice;
+  const stolenOn = req.body.stolenOn;
+  const location = req.body.location;
+  const tracking = req.body.tracking;
 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
-  const hasBeenTraded = req.body.hasBeenTraded;
+  let security = req.body.security;
+  if (security) {
+    security = security.map(s => s.trim().toLowerCase());
+  }
+
+  const recovered = req.body.recovered;
   const sourceId = req.body.sourceId;
 
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
-  }
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
   let origImages = req.body.origImages;
  
   const validation = validationResult(req);
@@ -99,14 +106,11 @@ exports.add = (req, res, next) => {
   }
   if (errors.length) {
     return res.status(422).json({
-      trade: {
+      stolen: {
         title: title,
         subtitle: subtitle,
         description: description,
-        askingPrice: askingPrice,
-        condition: condition,
         activitys: activitys,
-        hasBeenTraded: hasBeenTraded,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -115,31 +119,39 @@ exports.add = (req, res, next) => {
     });
   }
 
-  const trade = new Trade({
+  const stolen = new Stolen({
     title: title,
     subtitle: subtitle,
     description: description,
-    condition: condition,
-    askingPrice: askingPrice,
+    stolenOn: stolenOn,
+    location: location,
+    tracking: tracking,
     activitys: activitys,
-    hasBeenTraded: hasBeenTraded,
+    security: security,
+    recovered: recovered,
     sourceId: sourceId,
     userId: req.userId
   });
 
+
   if (images.length > 0) {
-    trade.images = images;
+    stolen.images = images;
   } else {
     //TODO: Can we make copies of images on s3 to remove dependency
-    trade.images = JSON.parse(origImages);
+    stolen.images = JSON.parse(origImages);
   }
 
-  let newTrade;
+  let newStolen;
+  let thisUser;
 
-  Trade.findOne({ sourceId: new ObjectId(sourceId) })
-    .then(currentSale => {
-      if (currentSale) {
-        const error = new Error('The requested item of kit is already listed for trade');
+  User.findById(req.userId)
+    .then (user => {
+      thisUser = user;
+      return Stolen.findOne({ sourceId: new ObjectId(sourceId) });
+    }) 
+    .then(currentStolen => {
+      if (currentStolen) {
+        const error = new Error('The requested item of kit is already listed as stolen');
         error.statusCode = 500;
         throw error;
       }
@@ -152,42 +164,24 @@ exports.add = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to trade this item of kit');
+        const error = new Error('You are not authorized to report this item of kit as stolen');
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 0) {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
+      if (kit.status !== 'owned') {
+        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
       }
-      if (req.user.package.max.trade <= req.user.package.size.trade) {
-        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
-        error.statusCode = 500;
-        throw error;
-      }
-      kit.status = 1;
+      kit.status = 'stolen';
       return kit.save();
     })
     .then(() => {
-      return trade.save();
+      return stolen.save();
     })
     .then(result => {
-      newTrade = result;
-      return User.findById(req.userId);
-    })
-    .then(user => { 
-      user.package.size.trade += 1;
-      return user.save();
-    })
-    .then(user => {
-      req.session.user = user;
-      return req.session.save(err => {
-        console.log(err);
-      });
-    })
-    .then(err => {
-      res.status(201).json({ trade: newTrade });
+      newStolen = result;
+      res.status(201).json({ stolen: newStolen });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -197,28 +191,24 @@ exports.add = (req, res, next) => {
     });
 };
 
-// GET request to get an already existing trade item
+// GET request to get an already existing stolen item
 exports.getItem = (req, res, next) => {
-  const tradeId = req.params.tradeId;
+  const stolenId = req.params.stolenId;
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      if (!trade) {
-        const error = new Error('for trade item not found');
+  Stolen
+    .findById(stolenId)
+    .then(stolen => {
+      if (!stolen) {
+        const error = new Error('Stolen item not found');
         error.statusCode = 404;
         throw error;
       }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the item being traded');
+      if (stolen.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to edit the item listed as stolen');
         error.statusCode = 403;
         throw error;
       }
-      res.status(200).json({
-        trade: trade,
-        origImages: JSON.stringify(trade.images),
-        errors: [],
-        editing: true
-      });
+      res.status(200).json(stolen);
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -230,30 +220,40 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const tradeId = req.body.tradeId;
-  const sourceId = req.body.sourceId;
+  const stolenId = req.body._id;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const condition = req.body.condition;
-  const askingPrice = +req.body.askingPrice;
+  const stolenOn = req.body.stolenOn;
+  const location = req.body.location;
+  const tracking = req.body.tracking;
+  const recovered = req.body.recovered;
 
   let activitys = req.body.activitys;
   if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
+    activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
-  const hasBeenTraded = req.body.hasBeenTraded;
-
-  let images = req.files;
-  if (images && images.length > 0) {
-    images = images.map(i => { 
-      const image = {};
-      image.image = i.key; 
-      image.imageUrl = i.location;
-      return image;
-    });
+  let security = req.body.security;
+  if (security) {
+    security = security.map(s => s.trim().toLowerCase());
   }
+
+  let reports = req.body.reports;
+  if (reports) {
+    reports = reports
+      .map(i => {
+        let item = {...i};
+        item.fromUserId = req.userId;
+        return item;
+      });
+  }
+  console.log('EDITGROUPS', reports);
+  
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
   
   const validation = validationResult(req);
   let errors = [];
@@ -262,15 +262,12 @@ exports.edit = (req, res, next) => {
   }
   if (errors.length) {
     return res.status(422).json({
-      trade: {
-        _id: tradeId,
+      stolen: {
+        _id: stolenId,
         title: title,
         subtitle: subtitle,
         description: description,
-        askingPrice: askingPrice,
-        condition: condition,
         activitys: activitys,
-        hasBeenTraded: hasBeenTraded,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -279,36 +276,35 @@ exports.edit = (req, res, next) => {
     });
   }
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      if (!trade) {
-        const error = new Error('for trade item not found');
+  Stolen.findById(stolenId)
+    .then(stolen => {
+      if (!stolen) {
+        const error = new Error('Stolen item not found');
         error.statusCode = 404;
         throw error;
       }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the kit being traded');
+      if (stolen.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to edit the kit reported as stolend');
         error.statusCode = 403;
         throw error;
       }
-      trade.title = title;
-      trade.subtitle = subtitle;
-      trade.description = description;
-      trade.askingPrice = askingPrice;
-      trade.condition = condition;
-      trade.activitys = activitys;
-      trade.hasBeenTraded = hasBeenTraded;
+      stolen.title = title;
+      stolen.subtitle = subtitle;
+      stolen.description = description;
+      stolen.stolenOn = stolenOn;
+      stolen.location = location;
+      stolen.tracking = tracking;
+      stolen.reports = reports;
+      stolen.activitys = activitys;
+      stolen.security = security;
+      stolen.recovered = recovered;
       if (images.length > 0) {
-        trade.images.forEach((img, i) => {
-          //TODO: 
-          //fileHelper.checkSourceAndDeleteImage(img.image);
-        });
-        trade.images = images;
+        stolen.images = images;
       }
-      return trade.save()
+      return stolen.save()
     })
     .then(result => {
-      res.status(200).json({ trade: result });
+      res.status(200).json({ stolen: result });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -326,25 +322,25 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, hasBeenTraded: (by === 'hasbeentraded') };
+  let query = { userId: req.userId, recovered: (by === 'recovered') };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { userId: req.userId, hasBeenTraded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = { userId: req.userId, recovered: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { userId: req.userId, hasBeenTraded: false, activitys: search };
+        query = { userId: req.userId, recovered: false, activitys: search };
         break;
       }
-      case 'hasBeenTraded': {
-        query = { userId: req.userId, hasBeenTraded: true };
+      case 'recovered': {
+        query = { userId: req.userId, recovered: true };
         break;
       }
       default: {
-        query = { $and: [ { userId: req.userId }, { hasBeenTraded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { userId: req.userId }, { recovered: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
@@ -352,22 +348,23 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Trade
+  Stolen
     .find(query)
     .countDocuments()
     .then(numberOfItems => {
       totalItems = numberOfItems;
-      return Trade.find(query)
+      return Stolen.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
-    .then(trades => {
+    .then(stolens => {
       res.status(200).json({
-        trades: trades,
+        stolens: stolens,
         filter: {
           by: by,
-          search: search  
+          search: search,
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,
@@ -390,22 +387,22 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to delete trade item from kitbag
+// POST request to delete stolen item from kitbag
 exports.delete = (req, res, next) => {
-  const tradeId = req.body.tradeId;
+  const stolenId = req.body.stolenId;
   const confirm = req.body.confirm;
 
-  let tradeItem = {};
+  let stolenItem = {};
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      if (!trade) {
-        const error = new Error('The requested sale item could not be found');
+  Stolen.findById(stolenId)
+    .then(stolen => {
+      if (!stolen) {
+        const error = new Error('The requested stolen item could not be found');
         error.statusCode = 404;
         throw error;
       }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this sale item');
+      if (stolen.userId.toString() !== req.userId.toString()) {
+        const error = new Error('You are not authorized to delete this item');
         error.statusCode = 403;
         throw error;
       }
@@ -414,8 +411,8 @@ exports.delete = (req, res, next) => {
         error.statusCode = 400;
         throw error;
       }
-      tradeItem = trade;
-      return Kit.findById(trade.sourceId);
+      stolenItem = stolen;
+      return Kit.findById(stolen.sourceId);
     })
     .then(kit => {
       if (!kit) {
@@ -432,32 +429,10 @@ exports.delete = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
-      if (tradeItem.images) {
-        tradeItem.images.forEach((img, i) => {
-          //TODO: 
-          //fileHelper.checkSourceAndDeleteImage(img.image);
-        });
-      }
-      return Trade.deleteOne({ _id: tradeId, userId: req.userId });
+      return Stolen.deleteOne({ _id: stolenId, userId: req.userId });
     })
     .then(result => {
-      return User.findById(req.userId);
-    })
-    .then(user => { 
-      user.package.size.trade -= 1;
-      if (user.package.size.trade < 0) {
-        user.package.size.trade = 0;
-      }
-      return user.save();
-    })
-    .then(user => {
-      req.session.user = user;
-      return req.session.save(err => {
-        console.log(err);
-      });
-    })
-    .then(err => {
-      res.status(200).json({ message: 'for trade item deleted' });
+      res.status(200).json({ message: 'Stolen item deleted' });
     })
     .catch(err => {
       if (!err.statusCode) {

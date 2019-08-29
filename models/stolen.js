@@ -7,15 +7,10 @@ const stolenSchema = new Schema({
     type: String,
     required: true
   },
+  subtitle: {
+    type: String
+  },
   description: {
-    type: String,
-    required: true
-  },
-  image: {
-    type: String,
-    required: true
-  },
-  imageUrl: {
     type: String,
     required: true
   },
@@ -25,12 +20,10 @@ const stolenSchema = new Schema({
   location: {
     type: {
       type: String,
-      enum: ['Point'],
-      required: true
+      enum: ['Point']
     },
     coordinates: {
-      type: [Number],
-      required: true
+      type: [Number]
     }
   },
   tracking: {
@@ -52,6 +45,17 @@ const stolenSchema = new Schema({
     }
   }],
   activitys: [String],
+  security: [String],
+  images: [
+    {
+      image: {
+        type: String
+      },
+      imageUrl: {
+        type: String
+      }  
+    }  
+  ],
   recovered: {
     type: Boolean
   },

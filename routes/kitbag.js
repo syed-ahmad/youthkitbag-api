@@ -28,14 +28,14 @@ router.delete('/trade/:tradeId', tradeController.delete);
 router.get('/trade/:tradeId', tradeController.getItem);
 router.get('/trade', tradeController.getItems);
 
-//router.get('/wanted/add/:kitId', wantedController.getAdd);
+router.get('/wanted/add/:kitId', wantedController.getAdd);
 router.post('/wanted', kitValidation, wantedController.add);
 router.put('/wanted/:wantedId', kitValidation, wantedController.edit);
 router.delete('/wanted/:wantedId', wantedController.delete);
 router.get('/wanted/:wantedId', wantedController.getItem);
 router.get('/wanted', wantedController.getItems);
 
-//router.get('/stolen/add/:kitId', stolenController.getAdd);
+router.get('/stolen/add/:kitId', stolenController.getAdd);
 router.post('/stolen', kitValidation, stolenController.add);
 router.put('/stolen/:stolenId', kitValidation, stolenController.edit);
 router.delete('/stolen/:stolenId', stolenController.delete);
