@@ -1,5 +1,7 @@
 const Wanted = require('../models/wanted');
 
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'obtained', value: 'All Recovered' } ];
+
 // GET request a wanted item
 exports.getItem = (req, res, next) => {
   const wantedId = req.params.wantedid;
@@ -61,19 +63,29 @@ exports.getItems = (req, res, next) => {
   Wanted
     .find(query)
     .countDocuments()
-    .then(numberOfWanteds => {
-      totalItems = numberOfWanteds;
+    .then(numberOfItems => {
+      totalItems = numberOfItems;
       return Wanted.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
     .then(wanteds => {
+      const allWanteds = wanteds.map(w => {
+        let nw = {};
+        nw._id = w._id;
+        nw.title = w.title;
+        nw.subtitle = w.subtitle;
+        nw.offerPrice = w.offerPrice;
+        nw.images = w.images;
+        return nw;
+      });
       res.status(200).json({
-        wanteds: wanteds,
+        wanteds: allWanteds,
         filter: {
           by: by,
-          search: search  
+          search: search,
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,

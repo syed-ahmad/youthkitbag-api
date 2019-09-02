@@ -49,13 +49,17 @@ const userSchema = new Schema({
       kit: { type: Number, default: 20 },
       trade: { type: Number, default: 5 },
       wanted: { type: Number, default: 5 },
-      photos: { type: Number, default: 2 }
+      photos: { type: Number, default: 2 },
+      groups: { type: Number, default: 3 },
+      groupadmins: { type: Number, default: 2 }
     },
     size: {
       kit: { type: Number, default: 0 },
       trade: { type: Number, default: 0 },
       wanted: { type: Number, default: 0 },
-      photos: { type: Number, default: 0 }
+      photos: { type: Number, default: 0 },
+      groups: { type: Number, default: 0 },
+      groupadmins: { type: Number, default: 0 }
     }
   },
   resetToken: String,

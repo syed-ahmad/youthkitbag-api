@@ -1,4 +1,5 @@
 const Stolen = require('../models/stolen');
+
 // GET request a stolen item
 exports.getItem = (req, res, next) => {
   const stolenId = req.params.stolenid;

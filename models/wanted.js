@@ -14,10 +14,14 @@ const wantedSchema = new Schema({
     type: String,
     required: true
   },
+  offerPrice: {
+    type: Number,
+    required: true
+  },
   location: {
     type: {
-      type: String, // Don't do `{ location: { type: String } }`
-      enum: ['Point'] // 'location.type' must be 'Point'
+      type: String,
+      enum: ['Point']
     },
     coordinates: {
       type: [Number]
@@ -33,10 +37,21 @@ const wantedSchema = new Schema({
       }  
     }  
   ],
-  offerPrice: {
-    type: Number,
-    required: true
-  },
+  activitys: [String],
+  groups: [
+    {
+      groupId:  {
+        type: Schema.Types.ObjectId,
+        ref: 'Group'
+      },
+      name: {
+        type: String
+      },
+      available: {
+        type: Date
+      }
+    }
+  ],
   offers: [{
     offeredOn: {
       type: Date
@@ -52,7 +67,6 @@ const wantedSchema = new Schema({
       type: Boolean
     }
   }],
-  activitys: [String],
   obtained: {
     type: Boolean
   },

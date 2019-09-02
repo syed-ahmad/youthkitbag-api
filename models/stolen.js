@@ -17,6 +17,9 @@ const stolenSchema = new Schema({
   stolenOn: {
     type: Date
   },
+  tracking: {
+    type: String
+  },
   location: {
     type: {
       type: String,
@@ -26,9 +29,32 @@ const stolenSchema = new Schema({
       type: [Number]
     }
   },
-  tracking: {
-    type: String
-  },
+  images: [
+    {
+      image: {
+        type: String
+      },
+      imageUrl: {
+        type: String
+      }  
+    }  
+  ],
+  activitys: [String],
+  security: [String],
+  groups: [
+    {
+      groupId:  {
+        type: Schema.Types.ObjectId,
+        ref: 'Group'
+      },
+      name: {
+        type: String
+      },
+      available: {
+        type: Date
+      }
+    }
+  ],
   reports: [{
     reportedOn: {
       type: Date
@@ -44,18 +70,6 @@ const stolenSchema = new Schema({
       type: Boolean
     }
   }],
-  activitys: [String],
-  security: [String],
-  images: [
-    {
-      image: {
-        type: String
-      },
-      imageUrl: {
-        type: String
-      }  
-    }  
-  ],
   recovered: {
     type: Boolean
   },

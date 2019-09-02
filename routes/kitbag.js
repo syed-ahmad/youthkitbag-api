@@ -20,7 +20,6 @@ router.delete('/kit/:kitId', kitController.delete);
 router.get('/kit/:kitId', kitController.getItem);
 router.get('/kit', kitController.getItems);
 
-
 router.get('/trade/add/:kitId', tradeController.getAdd);
 router.post('/trade', kitValidation, tradeController.add);
 router.put('/trade/:tradeId', kitValidation, tradeController.edit);

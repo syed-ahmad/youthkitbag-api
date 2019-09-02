@@ -24,8 +24,8 @@ const tradeSchema = new Schema({
   },
   location: {
     type: {
-      type: String, // Don't do `{ location: { type: String } }`
-      enum: ['Point'] // 'location.type' must be 'Point'
+      type: String,
+      enum: ['Point']
     },
     coordinates: {
       type: [Number]
@@ -41,7 +41,22 @@ const tradeSchema = new Schema({
       }  
     }  
   ],
-  traded: {
+  activitys: [String],
+  groups: [
+    {
+      groupId:  {
+        type: Schema.Types.ObjectId,
+        ref: 'Group'
+      },
+      name: {
+        type: String
+      },
+      available: {
+        type: Date
+      }
+    }
+  ],
+  tradeDetails: {
     tradedOn: {
       type: Date
     },
@@ -56,17 +71,9 @@ const tradeSchema = new Schema({
       type: Boolean
     }
   },
-  activitys: [String],
-  groups: [
-    {
-      name: {
-        type: String
-      },
-      available: {
-        type: Date
-      }
-    }
-  ],
+  traded: {
+    type: Boolean
+  },
   sourceId: {
     type: Schema.Types.ObjectId,
     ref: 'Kit',

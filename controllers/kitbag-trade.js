@@ -4,12 +4,13 @@ const Trade = require('../models/trade');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'hasbeentraded', value: 'All Traded' } ];
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'traded', value: 'All Traded' } ];
 
 // GET request to return kit item as item for trade
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
-  let thisKit;
+
+  let sourceKit;
 
   Trade.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentTrade => {
@@ -37,7 +38,7 @@ exports.getAdd = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-      thisKit = kit;
+      sourceKit = kit;
       return User.findById(req.userId);
     })
     .then (user => { 
@@ -48,18 +49,21 @@ exports.getAdd = (req, res, next) => {
       }
       res.status(200).json({
         trade: {
-          title: thisKit.title,
-          subtitle: thisKit.subtitle,
-          description: thisKit.description,
-          condition: thisKit.inbag.length > 0 ? thisKit.inbag[0].condition : 'used',
+          title: sourceKit.title,
+          subtitle: sourceKit.subtitle,
+          description: sourceKit.description,
+          condition: sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
           askingPrice: 0.01,
-          images: thisKit.images,
-          activitys: thisKit.activitys,
-          hasBeenTraded: false,
-          sourceId: thisKit._id,
+          //location: user.location ? user.location : 
+          images: sourceKit.images,
+          activitys: sourceKit.activitys,
+          //groups: user.groups ?
+          tradeDetails: {},
+          traded: false,
+          sourceId: sourceKit._id,
           userId: req.userId
         },
-        origImages: JSON.stringify(thisKit.images),
+        origImages: JSON.stringify(sourceKit.images),
         errors: [],
         editing: false
       });
@@ -79,14 +83,7 @@ exports.add = (req, res, next) => {
   const description = req.body.description;
   const condition = req.body.condition;
   const askingPrice = +req.body.askingPrice;
-
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  const hasBeenTraded = req.body.hasBeenTraded;
-  const sourceId = req.body.sourceId;
+  const location = req.body.location;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -94,6 +91,24 @@ exports.add = (req, res, next) => {
   });
   let origImages = req.body.origImages;
  
+  let activitys = req.body.activitys;
+  if (activitys) {
+    activitys = activitys.map(s => s.trim().toLowerCase());
+  }
+
+  let groups = req.body.groups;
+  if (groups) {
+    groups = groups
+      .filter(i => i.name)
+      .map(i => {
+        let item = {...i};
+        return item;
+      });
+  }
+
+  const traded = req.body.traded;
+  const sourceId = req.body.sourceId;
+
   const validation = validationResult(req);
   let errors = [];
   if (!validation.isEmpty()) {
@@ -105,10 +120,12 @@ exports.add = (req, res, next) => {
         title: title,
         subtitle: subtitle,
         description: description,
-        askingPrice: askingPrice,
         condition: condition,
+        askingPrice: askingPrice,
+        location: location,
         activitys: activitys,
-        hasBeenTraded: hasBeenTraded,
+        groups: groups,
+        traded: traded,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -123,8 +140,10 @@ exports.add = (req, res, next) => {
     description: description,
     condition: condition,
     askingPrice: askingPrice,
+    location: location,
     activitys: activitys,
-    hasBeenTraded: hasBeenTraded,
+    groups: groups,
+    traded: traded,
     sourceId: sourceId,
     userId: req.userId
   });
@@ -138,15 +157,15 @@ exports.add = (req, res, next) => {
   }
 
   let newTrade;
-  let thisUser;
+  let sourceUser;
 
   User.findById(req.userId)
     .then (user => {
-      thisUser = user;
+      sourceUser = user;
       return Trade.findOne({ sourceId: new ObjectId(sourceId) });
     }) 
-    .then(currentTrade => {
-      if (currentTrade) {
+    .then(existingTrade => {
+      if (existingTrade) {
         const error = new Error('The requested item of kit is already listed for trade');
         error.statusCode = 500;
         throw error;
@@ -169,7 +188,7 @@ exports.add = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-      if (thisUser.package.max.trade <= thisUser.package.size.trade) {
+      if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
         const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
         error.statusCode = 500;
         throw error;
@@ -182,8 +201,8 @@ exports.add = (req, res, next) => {
     })
     .then(result => {
       newTrade = result;
-      thisUser.package.size.trade += 1;
-      return thisUser.save();
+      sourceUser.package.size.trade += 1;
+      return sourceUser.save();
     })
     .then(err => {
       res.status(201).json({ trade: newTrade });
@@ -226,12 +245,17 @@ exports.getItem = (req, res, next) => {
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
   const tradeId = req.body._id;
-  const sourceId = req.body.sourceId;
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const condition = req.body.condition;
   const askingPrice = +req.body.askingPrice;
+  const location = req.body.location;
+
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
 
   let activitys = req.body.activitys;
   if (activitys) {
@@ -247,13 +271,16 @@ exports.edit = (req, res, next) => {
         return item;
       });
   }
-  console.log('EDITGROUPS', groups);
-  const hasBeenTraded = req.body.hasBeenTraded;
 
-  const activeImages = req.body.images.filter(i => i.state !== 'D');
-  const images = activeImages.map(i => {
-    return {...i, state: 'A'}
-  });
+  const tradeDetails = {
+    tradedOn: req.body.tradedOn,
+    toUserId: req.body.toUserId,
+    tradePrice: req.body.tradePrice,
+    complete: req.body.complete
+  };
+
+  const traded = req.body.traded;
+  const sourceId = req.body.sourceId;
   
   const validation = validationResult(req);
   let errors = [];
@@ -267,11 +294,14 @@ exports.edit = (req, res, next) => {
         title: title,
         subtitle: subtitle,
         description: description,
-        askingPrice: askingPrice,
         condition: condition,
+        askingPrice: askingPrice,
+        location: location,
+        images: images,
         activitys: activitys,
         groups: groups,
-        hasBeenTraded: hasBeenTraded,
+        tradeDetails: tradeDetails,
+        traded: traded,
         sourceId: sourceId,
         userId: req.userId
       },
@@ -295,18 +325,14 @@ exports.edit = (req, res, next) => {
       trade.title = title;
       trade.subtitle = subtitle;
       trade.description = description;
-      trade.askingPrice = askingPrice;
       trade.condition = condition;
+      trade.askingPrice = askingPrice;
+      trade.location = location;
+      trade.images = images;
       trade.activitys = activitys;
       trade.groups = groups;
-      trade.hasBeenTraded = hasBeenTraded;
-      if (images.length > 0) {
-        // trade.images.forEach((img, i) => {
-        //   //TODO: 
-        //   //fileHelper.checkSourceAndDeleteImage(img.image);
-        // });
-        trade.images = images;
-      }
+      trade.tradeDetails = tradeDetails;
+      trade.traded = traded;
       return trade.save()
     })
     .then(result => {
@@ -328,25 +354,29 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, hasBeenTraded: (by === 'hasbeentraded') };
+  let query = { userId: req.userId, traded: (by === 'traded') };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { userId: req.userId, hasBeenTraded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = { userId: req.userId, traded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { userId: req.userId, hasBeenTraded: false, activitys: search };
+        query = { userId: req.userId, traded: false, activitys: search };
         break;
       }
-      case 'hasbeentraded': {
-        query = { userId: req.userId, hasBeenTraded: true };
+      case 'group': {
+        query = { userId: req.userId, traded: true };
+        break;
+      }
+      case 'traded': {
+        query = { userId: req.userId, traded: true };
         break;
       }
       default: {
-        query = { $and: [ { userId: req.userId }, { hasBeenTraded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { userId: req.userId }, { traded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
