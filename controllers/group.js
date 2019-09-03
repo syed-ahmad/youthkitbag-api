@@ -7,10 +7,12 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Nam
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
+  console.log(req.body);
   const name = req.body.name;
   const tagline = req.body.tagline;
   const description = req.body.description;
   const email = req.body.email;
+  const website = req.body.website;
   const location = req.body.location;
 
   let activitys = req.body.activitys;
@@ -37,6 +39,7 @@ exports.add = (req, res, next) => {
         tagline: tagline,
         description: description,
         email: email,
+        website: website,
         location: location,
         activitys: activitys
       },
@@ -50,10 +53,11 @@ exports.add = (req, res, next) => {
     tagline: tagline,
     description: description,
     email: email,
+    website: website,
     location: location,
     images: images,
     activitys: activitys,
-    approval: false,
+    approval: 'requested',
     adminId: req.userId
   });
   

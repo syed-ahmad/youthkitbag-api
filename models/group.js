@@ -19,6 +19,10 @@ const groupSchema = new Schema({
     type: String,
     required: true
   },
+  website: {
+    type: String,
+    required: true
+  },
   location: {
     type: {
       type: String,
