@@ -127,6 +127,28 @@ exports.getItem = (req, res, next) => {
 };
 
 // GET request to get an already existing group for AppAdmin use only
+exports.get = (req, res, next) => {
+  const groupId = req.params.groupId;
+
+  Group
+    .findById(groupId)
+    .then(group => {
+      if (!group) {
+        const error = new Error('The requested group could not be found');
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json(group);
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// GET request to get an already existing group for AppAdmin use only
 exports.getDetails = (req, res, next) => {
   const groupId = req.params.groupId;
 

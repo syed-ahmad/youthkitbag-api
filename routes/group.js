@@ -12,6 +12,7 @@ const groupValidation = [
 ];
 
 router.post('', groupValidation, groupController.add);
+router.get('/:groupId', groupController.get);
 // router.get('/group/:groupId/members', isGroupAdminAuth, groupController.getMembers);
 
 router.put('/details/:groupId', isAppAdminAuth, groupController.editDetails);
