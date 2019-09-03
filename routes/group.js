@@ -12,7 +12,6 @@ const groupValidation = [
 ];
 
 router.post('', groupValidation, groupController.add);
-router.get('/:groupId', groupController.get);
 // router.get('/group/:groupId/members', isGroupAdminAuth, groupController.getMembers);
 
 router.put('/details/:groupId', isAppAdminAuth, groupController.editDetails);
@@ -20,6 +19,8 @@ router.get('/details/:groupId', isAppAdminAuth, groupController.getDetails);
 
 router.get('/search', groupController.getItems);
 
-router.get('/:groupId', isGroupAdminAuth, groupController.getItem);
+//router.get('/:groupId', isGroupAdminAuth, groupController.getItem);
+
+router.get('/:groupId', groupController.get);
 
 module.exports = router;
