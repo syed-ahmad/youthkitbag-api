@@ -173,12 +173,12 @@ exports.getDetails = (req, res, next) => {
 // PUT request to save edited changes to existing group for AppAdmin use only
 exports.editDetails = (req, res, next) => {
   const groupId = req.params.groupId;
-  const tagline = req.body.tagline;
+  // const tagline = req.body.tagline;
 
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
+  // let activitys = req.body.activitys;
+  // if (activitys) {
+  //   activitys = activitys.map(s => s.trim().toLowerCase());
+  // }
 
   const approval = req.body.approval;
 
@@ -197,8 +197,35 @@ exports.editDetails = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      group.tagline = tagline;
-      group.activitys = activitys;
+      //group.tagline = tagline;
+      //group.activitys = activitys;
+      group.approval = approval;
+      return group.save();
+    })
+    .then(result => {
+      res.status(200).json({ group: result });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// PUT request to save edited changes to existing group for AppAdmin use only
+exports.editStatus = (req, res, next) => {
+
+  const groupId = req.params.groupId;
+  const approval = req.body.approval;
+  console.log('EDITSTATUS', approval, groupId);
+  Group.findById(groupId)
+    .then(group => {
+      if (!group) {
+        const error = new Error('The requested group could not be found');
+        error.statusCode = 404;
+        throw error;
+      }
       group.approval = approval;
       return group.save();
     })
