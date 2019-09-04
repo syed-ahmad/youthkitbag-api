@@ -261,14 +261,6 @@ exports.getItems = (req, res, next) => {
         query = { activitys: search };
         break;
       }
-      // case 'requested': {
-      //   query = { approval: 'requested' };
-      //   break;
-      // }
-      // case 'blocked': {
-      //   query = { approval: 'blocked' };
-      //   break;
-      // }
       default: {
         query = { $and: [ { approval: { $ne: 'blocked'} }, { $or: [{ name: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
@@ -277,7 +269,7 @@ exports.getItems = (req, res, next) => {
   }
 
   let orderby = { updatedAt: -1 };
-console.log(query);
+
   Group
     .find(query)
     .countDocuments()
@@ -296,6 +288,8 @@ console.log(query);
         ng.approval = g.approval;
         ng.activitys = g.activitys;
         ng.images = g.images;
+        ng.memberCount = g.members.length;
+        ng.appAdmin = req.appAdmin;
         return ng;
       });
       res.status(200).json({

@@ -4,6 +4,7 @@ const { body } = require('express-validator/check');
 const groupController = require('../controllers/group');
 const isGroupAdminAuth = require('../middleware/is-groupadmin-auth');;
 const isAppAdminAuth = require('../middleware/is-appadmin-auth');;
+const adminCheck = require('../middleware/admincheck');
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.put('/status/:groupId', isAppAdminAuth, groupController.editStatus);
 router.put('/details/:groupId', isAppAdminAuth, groupController.editDetails);
 router.get('/details/:groupId', isAppAdminAuth, groupController.getDetails);
 
-router.get('/search', groupController.getItems);
+router.get('/search', adminCheck, groupController.getItems);
 
 //router.get('/:groupId', isGroupAdminAuth, groupController.getItem);
 
