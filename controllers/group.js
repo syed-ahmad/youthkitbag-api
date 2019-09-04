@@ -138,7 +138,8 @@ exports.get = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      res.status(200).json(group);
+      let currentGroup = { ...group.toObject(), appAdmin: req.appAdmin, groupAdmin: req.groupAdmin, exists: true };
+      res.status(200).json(currentGroup);
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -160,7 +161,8 @@ exports.getDetails = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      res.status(200).json(group);
+      let currentGroup = { ...group, appAdmin: req.appAdmin, groupAdmin: req.groupAdmin };
+      res.status(200).json(currentGroup);
     })
     .catch(err => {
       if (!err.statusCode) {

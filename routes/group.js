@@ -23,6 +23,6 @@ router.get('/search', adminCheck, groupController.getItems);
 
 //router.get('/:groupId', isGroupAdminAuth, groupController.getItem);
 
-router.get('/:groupId', groupController.get);
+router.get('/:groupId', adminCheck, groupController.get);
 
 module.exports = router;
