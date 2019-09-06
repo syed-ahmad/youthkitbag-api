@@ -11,16 +11,13 @@ const tradeSchema = new Schema({
     type: String
   },
   description: {
-    type: String,
-    required: true
+    type: String
   },
   condition: {
-    type: String,
-    required: true
+    type: String
   },
   askingPrice: {
-    type: Number,
-    required: true
+    type: Number
   },
   location: {
     type: {
@@ -76,8 +73,7 @@ const tradeSchema = new Schema({
   },
   sourceId: {
     type: Schema.Types.ObjectId,
-    ref: 'Kit',
-    required: true
+    ref: 'Kit'
   },
   userId: {
     type: Schema.Types.ObjectId,

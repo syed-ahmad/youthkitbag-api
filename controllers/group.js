@@ -2,13 +2,12 @@ const Group = require('../models/group');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 
-//const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' }, { key: 'requested', value: 'Requested' }, { key: 'blocked', value: 'Blocked' } ];
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' } ];
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' } ];
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
   console.log(req.body);
-  const name = req.body.name;
+  const title = req.body.title;
   const tagline = req.body.tagline;
   const description = req.body.description;
   const email = req.body.email;
@@ -35,7 +34,7 @@ exports.add = (req, res, next) => {
   if (errors.length) {
     return res.status(422).json({
       group: {
-        name: name,
+        title: title,
         tagline: tagline,
         description: description,
         email: email,
@@ -49,7 +48,7 @@ exports.add = (req, res, next) => {
   }
 
   const group = new Group({
-    name: name,
+    title: title,
     tagline: tagline,
     description: description,
     email: email,
@@ -255,8 +254,8 @@ exports.getItems = (req, res, next) => {
   if (search || by) {
     search = search ? search.toLowerCase() : '';
     switch (by) {
-      case 'name': {
-        query = { name: { $regex : `.*${search}.*`, $options: 'i' } };
+      case 'title': {
+        query = { title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
@@ -264,7 +263,7 @@ exports.getItems = (req, res, next) => {
         break;
       }
       default: {
-        query = { $and: [ { approval: { $ne: 'blocked'} }, { $or: [{ name: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { approval: { $ne: 'blocked'} }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
@@ -286,7 +285,7 @@ exports.getItems = (req, res, next) => {
       const allGroups = groups.map(g => {
         let ng = {};
         ng._id = g._id;
-        ng.name = g.name;
+        ng.title = g.title;
         ng.approval = g.approval;
         ng.activitys = g.activitys;
         ng.images = g.images;
@@ -368,7 +367,7 @@ exports.getItems = (req, res, next) => {
 // exports.getContainers = (req, res, next) => {
 
 //   let query = { userId: req.userId, approval: true, tags: 'container' };
-//   let orderby = { name: 1 };
+//   let orderby = { title: 1 };
 
 //   Group
 //     .find(query).sort(orderby)

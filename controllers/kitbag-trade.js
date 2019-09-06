@@ -99,7 +99,7 @@ exports.add = (req, res, next) => {
   let groups = req.body.groups;
   if (groups) {
     groups = groups
-      .filter(i => i.name)
+      .filter(i => i.title)
       .map(i => {
         let item = {...i};
         return item;
@@ -159,7 +159,8 @@ exports.add = (req, res, next) => {
   let newTrade;
   let sourceUser;
 
-  User.findById(req.userId)
+  if (sourceId) {
+    User.findById(req.userId)
     .then (user => {
       sourceUser = user;
       return Trade.findOne({ sourceId: new ObjectId(sourceId) });
@@ -213,6 +214,32 @@ exports.add = (req, res, next) => {
       }
       next(err);
     });
+  } else {
+    User.findById(req.userId)
+      .then (user => {
+        sourceUser = user;
+        if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
+          const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
+          error.statusCode = 500;
+          throw error;
+        }
+        return trade.save();
+      })
+      .then(result => {
+        newTrade = result;
+        sourceUser.package.size.trade += 1;
+        return sourceUser.save();
+      })
+      .then(() => {
+        res.status(201).json({ trade: newTrade });
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+  }
 };
 
 // GET request to get an already existing trade item
@@ -265,7 +292,7 @@ exports.edit = (req, res, next) => {
   let groups = req.body.groups;
   if (groups) {
     groups = groups
-      .filter(i => i.name)
+      .filter(i => i.title)
       .map(i => {
         let item = {...i};
         return item;
