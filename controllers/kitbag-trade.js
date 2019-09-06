@@ -47,24 +47,19 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       res.status(200).json({
-        trade: {
-          title: sourceKit.title,
-          subtitle: sourceKit.subtitle,
-          description: sourceKit.description,
-          condition: sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
-          askingPrice: 0.01,
-          //location: user.location ? user.location : 
-          images: sourceKit.images,
-          activitys: sourceKit.activitys,
-          //groups: user.groups ?
-          tradeDetails: {},
-          traded: false,
-          sourceId: sourceKit._id,
-          userId: req.userId
-        },
-        origImages: JSON.stringify(sourceKit.images),
-        errors: [],
-        editing: false
+        title: sourceKit.title,
+        subtitle: sourceKit.subtitle,
+        description: sourceKit.description,
+        condition: sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
+        askingPrice: 0.01,
+        //location: user.location ? user.location : 
+        images: sourceKit.images,
+        activitys: sourceKit.activitys,
+        groups: [],
+        tradeDetails: {},
+        traded: false,
+        sourceId: sourceKit._id,
+        userId: req.userId
       });
     })
     .catch(err => {

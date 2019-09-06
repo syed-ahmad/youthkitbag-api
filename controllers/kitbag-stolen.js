@@ -9,12 +9,13 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 // GET request to return kit item as item for stolen
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
-  let thisKit;
+
+  let sourceKit;
 
   Stolen.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentStolen => {
       if (currentStolen) {
-        const error = new Error('The requested item of kit is already listed for stolen');
+        const error = new Error('The requested item of kit is already listed as stolen');
         error.statusCode = 500;
         throw error;
       }
@@ -31,35 +32,30 @@ exports.getAdd = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 'owned') {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed as stolen');
+      if (kit.status !== 'owned' || kit.status !== 'trade') {
+        const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
       }
-      thisKit = kit;
+      sourcesKit = kit;
       return User.findById(req.userId);
     })
-    .then (user => { 
-      if (!user) {
-        const error = new Error('User not identified.');
+    .then (user => {
+      if (user.package.max.stolen <= user.package.size.stolen) {
+        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        stolen: {
-          title: thisKit.title,
-          subtitle: thisKit.subtitle,
-          description: thisKit.description,
-          images: thisKit.images,
-          activitys: thisKit.activitys,
-          security: thisKit.security,
-          recovered: false,
-          sourceId: thisKit._id,
-          userId: req.userId
-        },
-        origImages: JSON.stringify(thisKit.images),
-        errors: [],
-        editing: false
+        title: sourceKit.title,
+        subtitle: sourceKit.subtitle,
+        description: sourceKit.description, 
+        images: sourceKit.images,
+        activitys: sourceKit.activitys,
+        security: sourceKit.security,
+        recovered: false,
+        sourceId: sourceKit._id,
+        userId: req.userId
       });
     })
     .catch(err => {
@@ -79,6 +75,12 @@ exports.add = (req, res, next) => {
   const location = req.body.location;
   const tracking = req.body.tracking;
 
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
+  let origImages = req.body.origImages;
+ 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
@@ -86,37 +88,31 @@ exports.add = (req, res, next) => {
 
   let security = req.body.security;
   if (security) {
-    security = security.map(s => s.trim().toLowerCase());
+    security = security.map(s => s.trim());
   }
 
   const recovered = req.body.recovered;
   const sourceId = req.body.sourceId;
 
-  const activeImages = req.body.images.filter(i => i.state !== 'D');
-  const images = activeImages.map(i => {
-    return {...i, state: 'A'}
-  });
-  let origImages = req.body.origImages;
- 
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      stolen: {
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        activitys: activitys,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: false
-    });
-  }
+  // const validation = validationResult(req);
+  // let errors = [];
+  // if (!validation.isEmpty()) {
+  //   errors = validation.array();
+  // }
+  // if (errors.length) {
+  //   return res.status(422).json({
+  //     stolen: {
+  //       title: title,
+  //       subtitle: subtitle,
+  //       description: description,
+  //       activitys: activitys,
+  //       sourceId: sourceId,
+  //       userId: req.userId
+  //     },
+  //     errors: errors,
+  //     editing: false
+  //   });
+  // }
 
   const stolen = new Stolen({
     title: title,
@@ -132,7 +128,6 @@ exports.add = (req, res, next) => {
     userId: req.userId
   });
 
-
   if (images.length > 0) {
     stolen.images = images;
   } else {
@@ -141,15 +136,16 @@ exports.add = (req, res, next) => {
   }
 
   let newStolen;
-  let thisUser;
+  let sourceUser;
 
+  if (sourceId) {
   User.findById(req.userId)
     .then (user => {
-      thisUser = user;
+      sourceUser = user;
       return Stolen.findOne({ sourceId: new ObjectId(sourceId) });
     }) 
-    .then(currentStolen => {
-      if (currentStolen) {
+    .then(existingStolen => {
+      if (existingStolen) {
         const error = new Error('The requested item of kit is already listed as stolen');
         error.statusCode = 500;
         throw error;
@@ -167,8 +163,13 @@ exports.add = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 'owned') {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed as stolen');
+      if (kit.status !== 'owned' || kit.status !== 'trade') {
+        const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
+        error.statusCode = 500;
+        throw error;
+      }
+      if (sourceUser.package.max.stolen <= sourceUser.package.size.stolen) {
+        const error = new Error('You have already reached the limits of reporting stolen items in your trade package. However, we understand at this stressful time you may need more, so please contact us.');
         error.statusCode = 500;
         throw error;
       }
@@ -180,6 +181,10 @@ exports.add = (req, res, next) => {
     })
     .then(result => {
       newStolen = result;
+      sourceUser.package.size.trade += 1;
+      return sourceUser.save();
+    })
+    .then(err => {
       res.status(201).json({ stolen: newStolen });
     })
     .catch(err => {
@@ -188,6 +193,33 @@ exports.add = (req, res, next) => {
       }
       next(err);
     });
+  } else {
+    User.findById(req.userId)
+      .then (user => {
+        sourceUser = user;
+        if (sourceUser.package.max.stolen <= sourceUser.package.size.stolen) {
+          const error = new Error('You have already reached the limits of your stolen package. Please upgrade to trade more items.');
+          error.statusCode = 500;
+          throw error;
+        }
+        stolen.sourceId = undefined;
+        return stolen.save();
+      })
+      .then(result => {
+        newStolen = result;
+        sourceUser.package.size.stolen += 1;
+        return sourceUser.save();
+      })
+      .then(() => {
+        res.status(201).json({ stolen: newStolen });
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+  }
 };
 
 // GET request to get an already existing stolen item
@@ -235,7 +267,7 @@ exports.edit = (req, res, next) => {
 
   let security = req.body.security;
   if (security) {
-    security = security.map(s => s.trim().toLowerCase());
+    security = security.map(s => s.trim());
   }
 
   let reports = req.body.reports;

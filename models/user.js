@@ -49,6 +49,7 @@ const userSchema = new Schema({
       kit: { type: Number, default: 20 },
       trade: { type: Number, default: 5 },
       wanted: { type: Number, default: 5 },
+      stolen: { type: Number, default: 30 },
       photos: { type: Number, default: 2 },
       groups: { type: Number, default: 3 },
       groupadmins: { type: Number, default: 2 }
@@ -57,6 +58,7 @@ const userSchema = new Schema({
       kit: { type: Number, default: 0 },
       trade: { type: Number, default: 0 },
       wanted: { type: Number, default: 0 },
+      stolen: { type: Number, default: 0 },
       photos: { type: Number, default: 0 },
       groups: { type: Number, default: 0 },
       groupadmins: { type: Number, default: 0 }
