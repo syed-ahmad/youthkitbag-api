@@ -48,7 +48,6 @@ exports.add = (req, res, next) => {
   User
     .findById(req.userId)
     .then (user => { 
-      console.log('max, size', user.package.max.photos, user.package.size.photos)
       return user.package.max.photos <= user.package.size.photos;
     })
     .then (reachedLimit => {
@@ -96,6 +95,5 @@ exports.add = (req, res, next) => {
 };
 
 exports.delete = (req, res, next) => {
-  console.log('delete image');
   res.status(200).json({ deleted: true });
 };

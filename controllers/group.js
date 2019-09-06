@@ -6,7 +6,6 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
-  console.log(req.body);
   const title = req.body.title;
   const tagline = req.body.tagline;
   const description = req.body.description;
@@ -219,7 +218,6 @@ exports.editStatus = (req, res, next) => {
 
   const groupId = req.params.groupId;
   const approval = req.body.approval;
-  console.log('EDITSTATUS', approval, groupId);
   Group.findById(groupId)
     .then(group => {
       if (!group) {

@@ -313,7 +313,6 @@ exports.getItems = (req, res, next) => {
     }
   }
 
-  console.log(query);
   let orderby = { updatedAt: -1 };
 
   Wanted

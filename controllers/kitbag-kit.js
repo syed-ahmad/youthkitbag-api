@@ -106,7 +106,6 @@ exports.add = (req, res, next) => {
   
   let newKit;
   // const imageIds = images.map(i => i.photoId );
-  // console.log(imageIds);
 
   imagesToDelete.forEach(i => {
     awsHelper.deleteImage(i.image);

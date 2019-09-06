@@ -33,7 +33,6 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.status !== 'owned') {
-        console.log('STATUS',kit.status);
         const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
         error.statusCode = 500;
         throw error;
@@ -109,30 +108,30 @@ exports.add = (req, res, next) => {
   const traded = req.body.traded;
   const sourceId = req.body.sourceId;
 
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      trade: {
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        condition: condition,
-        askingPrice: askingPrice,
-        location: location,
-        activitys: activitys,
-        groups: groups,
-        traded: traded,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: false
-    });
-  }
+  // const validation = validationResult(req);
+  // let errors = [];
+  // if (!validation.isEmpty()) {
+  //   errors = validation.array();
+  // }
+  // if (errors.length) {
+  //   return res.status(422).json({
+  //     trade: {
+  //       title: title,
+  //       subtitle: subtitle,
+  //       description: description,
+  //       condition: condition,
+  //       askingPrice: askingPrice,
+  //       location: location,
+  //       activitys: activitys,
+  //       groups: groups,
+  //       traded: traded,
+  //       sourceId: sourceId,
+  //       userId: req.userId
+  //     },
+  //     errors: errors,
+  //     editing: false
+  //   });
+  // }
 
   const trade = new Trade({
     title: title,
@@ -223,6 +222,7 @@ exports.add = (req, res, next) => {
           error.statusCode = 500;
           throw error;
         }
+        trade.sourceId = undefined;
         return trade.save();
       })
       .then(result => {

@@ -32,7 +32,6 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.status !== 'owned') {
-        console.log('STATUS',kit.status);
         const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
@@ -248,8 +247,6 @@ exports.edit = (req, res, next) => {
         return item;
       });
   }
-  console.log('EDITGROUPS', reports);
-  
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
     return {...i, state: 'A'}
