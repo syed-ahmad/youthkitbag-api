@@ -50,7 +50,7 @@ exports.getAdd = (req, res, next) => {
         title: sourceKit.title,
         subtitle: sourceKit.subtitle,
         description: sourceKit.description, 
-        location: '', 
+        location: {}, 
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         security: sourceKit.security,

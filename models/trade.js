@@ -15,7 +15,13 @@ const tradeSchema = new Schema({
     type: String
   },
   location: {
-    type: pointSchema
+    type: {
+      type: String,
+      enum: ['Point']
+    },
+    coordinates: {
+      type: [Number]
+    }
   },
   images: [
     {
