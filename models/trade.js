@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const pointSchema = require('./point');
 
 const Schema = mongoose.Schema;
 
@@ -13,20 +14,8 @@ const tradeSchema = new Schema({
   description: {
     type: String
   },
-  condition: {
-    type: String
-  },
-  askingPrice: {
-    type: Number
-  },
   location: {
-    type: {
-      type: String,
-      enum: ['Point']
-    },
-    coordinates: {
-      type: [Number]
-    }
+    type: pointSchema
   },
   images: [
     {
@@ -39,6 +28,24 @@ const tradeSchema = new Schema({
     }  
   ],
   activitys: [String],
+  condition: {
+    type: String
+  },
+  askingPrice: {
+    type: Number
+  },
+  traded: {
+    type: Boolean
+  },
+  sourceId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Kit'
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   groups: [
     {
       groupId:  {
@@ -67,18 +74,6 @@ const tradeSchema = new Schema({
     complete: {
       type: Boolean
     }
-  },
-  traded: {
-    type: Boolean
-  },
-  sourceId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Kit'
-  },
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
   }
 }, { timestamps: true });
 

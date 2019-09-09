@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const pointSchema = require('./point');
 
 const Schema = mongoose.Schema;
 
@@ -11,23 +12,10 @@ const stolenSchema = new Schema({
     type: String
   },
   description: {
-    type: String,
-    required: true
-  },
-  stolenOn: {
-    type: Date
-  },
-  tracking: {
     type: String
   },
   location: {
-    type: {
-      type: String,
-      enum: ['Point']
-    },
-    coordinates: {
-      type: [Number]
-    }
+    type: pointSchema
   },
   images: [
     {
@@ -41,6 +29,24 @@ const stolenSchema = new Schema({
   ],
   activitys: [String],
   security: [String],
+  stolenOn: {
+    type: Date
+  },
+  tracking: {
+    type: String
+  },
+  recovered: {
+    type: Boolean
+  },
+  sourceId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Kit'
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   groups: [
     {
       groupId:  {
@@ -55,7 +61,7 @@ const stolenSchema = new Schema({
       }
     }
   ],
-  reports: [{
+  reportDetails: [{
     reportedOn: {
       type: Date
     },
@@ -69,20 +75,7 @@ const stolenSchema = new Schema({
     accepted: {
       type: Boolean
     }
-  }],
-  recovered: {
-    type: Boolean
-  },
-  sourceId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Kit',
-    required: true
-  },
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  }
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Stolen', stolenSchema);

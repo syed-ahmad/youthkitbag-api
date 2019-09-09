@@ -2,14 +2,14 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Wanted = require('../models/wanted');
 const User = require('../models/user');
-const { validationResult } = require('express-validator/check');
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'obtained', value: 'All Recovered' } ];
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'obtained', value: 'All Recovered' } ];
 
 // GET request to return kit item as item for wanted
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
-  let thisKit;
+
+  let sourceKit;
 
   Wanted.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentWanted => {
@@ -27,33 +27,32 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to report this item of kit as wanted');
+        const error = new Error('You are not authorized to use this item of kit as wanted');
         error.statusCode = 403;
         throw error;
       }
-      thisKit = kit;
+      sourceKit = kit;
       return User.findById(req.userId);
     })
     .then (user => { 
-      if (!user) {
-        const error = new Error('User not identified.');
+      if (user.package.max.wanted <= user.package.size.wanted) {
+        const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        wanted: {
-          title: thisKit.title,
-          subtitle: thisKit.subtitle,
-          description: thisKit.description,
-          images: thisKit.images,
-          activitys: thisKit.activitys,
-          obtained: false,
-          sourceId: thisKit._id,
-          userId: req.userId
-        },
-        origImages: JSON.stringify(thisKit.images),
-        errors: [],
-        editing: false
+        title: sourceKit.title,
+        subtitle: sourceKit.subtitle,
+        description: sourceKit.description,
+        offerPrice: 0.00,
+        location: { type: ['Point'], coordinates: [-122.5, 37.7] }, 
+        images: sourceKit.images,
+        activitys: sourceKit.activitys,
+        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
+        offerDetails: [],
+        obtained: false,
+        sourceId: sourceKit._id,
+        userId: req.userId
       });
     })
     .catch(err => {
@@ -69,13 +68,15 @@ exports.add = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const location = req.body.location;
   const offerPrice = +req.body.offerPrice;
+  const location = req.body.location;
 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
+
+  let groups = req.body.groups;
 
   const obtained = req.body.obtained;
   const sourceId = req.body.sourceId;
@@ -85,86 +86,94 @@ exports.add = (req, res, next) => {
     return {...i, state: 'A'}
   });
   let origImages = req.body.origImages;
- 
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      wanted: {
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        activitys: activitys,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: false
-    });
-  }
 
   const wanted = new Wanted({
     title: title,
     subtitle: subtitle,
     description: description,
-    location: location,
     offerPrice: offerPrice,
+    location: location,
+    images: images && images.length > 0 ? images : origImages ? JSON.parse(origImages) : [],
     activitys: activitys,
+    groups: groups,
+    offerDetails: [],
     obtained: obtained,
     sourceId: sourceId,
     userId: req.userId
   });
 
-
-  if (images.length > 0) {
-    wanted.images = images;
-  } else {
-    //TODO: Can we make copies of images on s3 to remove dependency
-    wanted.images = JSON.parse(origImages);
-  }
-
   let newWanted;
-  let thisUser;
+  let sourceUser;
 
-  User.findById(req.userId)
-    .then (user => {
-      thisUser = user;
-      return Wanted.findOne({ sourceId: new ObjectId(sourceId) });
-    }) 
-    .then(currentWanted => {
-      if (currentWanted && !currentWanted.obtained) {
-        const error = new Error('The requested item of kit is already actively listed as wanted');
-        error.statusCode = 500;
-        throw error;
-      }
-      return Kit.findById(sourceId);
-    })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to report this item of kit as wanted');
-        error.statusCode = 403;
-        throw error;
-      }
-      return wanted.save();
-    })
-    .then(result => {
-      newWanted = result;
-      res.status(201).json({ wanted: newWanted });
-    })
-    .catch(err => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
+  if (sourceId) {
+    User.findById(req.userId)
+      .then (user => {
+        sourceUser = user;
+        return Wanted.findOne({ sourceId: new ObjectId(sourceId) });
+      }) 
+      .then(currentWanted => {
+        if (currentWanted && !currentWanted.obtained) {
+          const error = new Error('The requested item of kit is already actively listed as wanted');
+          error.statusCode = 500;
+          throw error;
+        }
+        return Kit.findById(sourceId);
+      })
+      .then(kit => {
+        if (!kit) {
+          const error = new Error('The requested item of kit could not be found');
+          error.statusCode = 404;
+          throw error;
+        }
+        if (kit.userId.toString() !== req.userId.toString()) {
+          const error = new Error('You are not authorized to report this item of kit as wanted');
+          error.statusCode = 403;
+          throw error;
+        }
+        if (sourceUser.package.max.wanted <= sourceUser.package.size.wanted) {
+          const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
+          error.statusCode = 500;
+          throw error;
+        }
+        return wanted.save();
+      })
+      .then(result => {
+        newWanted = result;
+        res.status(201).json({ wanted: newWanted });
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });    
+  } else {
+    User.findById(req.userId)
+      .then (user => {
+        sourceUser = user;
+        if (sourceUser.package.max.wanted <= sourceUser.package.size.wanted) {
+          const error = new Error('You have already reached the limits of your wanted package. Please upgrade to want more items.');
+          error.statusCode = 500;
+          throw error;
+        }
+        wanted.sourceId = undefined;
+        return wanted.save();
+      })
+      .then(result => {
+        newWanted = result;
+        sourceUser.package.size.wanted += 1;
+        return sourceUser.save();
+      })
+      .then(() => {
+        res.status(201).json({ wanted: newWanted });
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+  }
 };
 
 // GET request to get an already existing wanted item
@@ -175,12 +184,12 @@ exports.getItem = (req, res, next) => {
     .findById(wantedId)
     .then(wanted => {
       if (!wanted) {
-        const error = new Error('Wanted item not found');
+        const error = new Error('The requested wanted item could not be found');
         error.statusCode = 404;
         throw error;
       }
       if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the item listed as wanted');
+        const error = new Error('You are not authorized to edit this wanted item');
         error.statusCode = 403;
         throw error;
       }
@@ -200,50 +209,24 @@ exports.edit = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const location = req.body.location;
   const offerPrice = +req.body.offerPrice;
-  const obtained = req.body.obtained;
+  const location = req.body.location;
 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
-  let offers = req.body.offers;
-  if (offers) {
-    offers = offers
-      .map(i => {
-        let item = {...i};
-        item.fromUserId = req.userId;
-        return item;
-      });
-  }
-  
+  let groups = req.body.groups;
+
+  let offerDetails = req.body.offerDetails;
+
+  const obtained = req.body.obtained;
+
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
     return {...i, state: 'A'}
   });
-  
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      wanted: {
-        _id: wantedId,
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        activitys: activitys,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: true
-    });
-  }
 
   Wanted.findById(wantedId)
     .then(wanted => {
@@ -260,14 +243,13 @@ exports.edit = (req, res, next) => {
       wanted.title = title;
       wanted.subtitle = subtitle;
       wanted.description = description;
-      wanted.location = location;
       wanted.offerPrice = offerPrice;
-      wanted.offers = offers;
+      wanted.location = location;
+      wanted.images = images;
       wanted.activitys = activitys;
+      wanted.groups = groups;
+      wanted.offerDetails = offerDetails;
       wanted.obtained = obtained;
-      if (images.length > 0) {
-        wanted.images = images;
-      }
       return wanted.save()
     })
     .then(result => {
@@ -300,6 +282,10 @@ exports.getItems = (req, res, next) => {
       }
       case 'activity': {
         query = { userId: req.userId, obtained: false, activitys: search };
+        break;
+      }
+      case 'group': {
+        query = { userId: req.userId, obtained: true };
         break;
       }
       case 'obtained': {
@@ -356,10 +342,7 @@ exports.getItems = (req, res, next) => {
 
 // POST request to delete wanted item from kitbag
 exports.delete = (req, res, next) => {
-  const wantedId = req.body.wantedId;
-  const confirm = req.body.confirm;
-
-  let wantedItem = {};
+  const wantedId = req.params.wantedId;
 
   Wanted.findById(wantedId)
     .then(wanted => {
@@ -369,32 +352,23 @@ exports.delete = (req, res, next) => {
         throw error;
       }
       if (wanted.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this item');
+        const error = new Error('You are not authorized to delete this wanted item');
         error.statusCode = 403;
         throw error;
       }
-      if (confirm !== 'delete') {
-        const error = new Error('You did not confirm the delete');
-        error.statusCode = 400;
-        throw error;
-      }
-      wantedItem = wanted;
-      return Kit.findById(wanted.sourceId);
+      return wanted.delete();
     })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to take any action on this item of related kit');
-        error.statusCode = 403;
-        throw error;
-      }
-      return Wanted.deleteOne({ _id: wantedId, userId: req.userId });
+    .then(() => {
+      return User.findById(req.userId);
     })
-    .then(result => {
+    .then(user => {
+      user.package.size.wanted -= 1;
+      if (user.package.size.wanted < 0) {
+        user.package.size.wanted = 0;
+      }
+      return user.save();
+    })
+    .then(() => {
       res.status(200).json({ message: 'Wanted item deleted' });
     })
     .catch(err => {

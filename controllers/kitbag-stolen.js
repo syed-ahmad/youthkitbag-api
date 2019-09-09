@@ -2,9 +2,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Stolen = require('../models/stolen');
 const User = require('../models/user');
-const { validationResult} = require('express-validator/check');
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'recovered', value: 'All Recovered' } ];
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'recovered', value: 'All Recovered' } ];
 
 // GET request to return kit item as item for stolen
 exports.getAdd = (req, res, next) => {
@@ -22,6 +21,7 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
+      console.log('KIT', kit);
       if (!kit) {
         const error = new Error('The requested item of kit could not be found');
         error.statusCode = 404;
@@ -32,12 +32,12 @@ exports.getAdd = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 'owned' || kit.status !== 'trade') {
+      if (kit.status !== 'owned' && kit.status !== 'trade') {
         const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
       }
-      sourcesKit = kit;
+      sourceKit = kit;
       return User.findById(req.userId);
     })
     .then (user => {
@@ -50,12 +50,17 @@ exports.getAdd = (req, res, next) => {
         title: sourceKit.title,
         subtitle: sourceKit.subtitle,
         description: sourceKit.description, 
+        location: '', 
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         security: sourceKit.security,
+        stolenOn: '2019-01-01',
+        tracking: '',
         recovered: false,
         sourceId: sourceKit._id,
-        userId: req.userId
+        userId: req.userId,
+        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
+        reportDetails: []
       });
     })
     .catch(err => {
@@ -74,17 +79,13 @@ exports.add = (req, res, next) => {
   const stolenOn = req.body.stolenOn;
   const location = req.body.location;
   const tracking = req.body.tracking;
-
-  const activeImages = req.body.images.filter(i => i.state !== 'D');
-  const images = activeImages.map(i => {
-    return {...i, state: 'A'}
-  });
-  let origImages = req.body.origImages;
  
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
+
+  let groups = req.body.groups;
 
   let security = req.body.security;
   if (security) {
@@ -94,46 +95,26 @@ exports.add = (req, res, next) => {
   const recovered = req.body.recovered;
   const sourceId = req.body.sourceId;
 
-  // const validation = validationResult(req);
-  // let errors = [];
-  // if (!validation.isEmpty()) {
-  //   errors = validation.array();
-  // }
-  // if (errors.length) {
-  //   return res.status(422).json({
-  //     stolen: {
-  //       title: title,
-  //       subtitle: subtitle,
-  //       description: description,
-  //       activitys: activitys,
-  //       sourceId: sourceId,
-  //       userId: req.userId
-  //     },
-  //     errors: errors,
-  //     editing: false
-  //   });
-  // }
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
+  let origImages = req.body.origImages;
 
   const stolen = new Stolen({
     title: title,
     subtitle: subtitle,
     description: description,
     stolenOn: stolenOn,
-    location: location,
     tracking: tracking,
+    location: location,
+    images: images && images.length > 0 ? images : origImages ? JSON.parse(origImages) : [],
     activitys: activitys,
     security: security,
     recovered: recovered,
     sourceId: sourceId,
     userId: req.userId
   });
-
-  if (images.length > 0) {
-    stolen.images = images;
-  } else {
-    //TODO: Can we make copies of images on s3 to remove dependency
-    stolen.images = JSON.parse(origImages);
-  }
 
   let newStolen;
   let sourceUser;
@@ -163,7 +144,7 @@ exports.add = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      if (kit.status !== 'owned' || kit.status !== 'trade') {
+      if (kit.status !== 'owned' && kit.status !== 'trade') {
         const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
         error.statusCode = 500;
         throw error;
@@ -181,7 +162,7 @@ exports.add = (req, res, next) => {
     })
     .then(result => {
       newStolen = result;
-      sourceUser.package.size.trade += 1;
+      sourceUser.package.size.stolen += 1;
       return sourceUser.save();
     })
     .then(err => {
@@ -230,7 +211,7 @@ exports.getItem = (req, res, next) => {
     .findById(stolenId)
     .then(stolen => {
       if (!stolen) {
-        const error = new Error('Stolen item not found');
+        const error = new Error('The requested stolen item could not be found');
         error.statusCode = 404;
         throw error;
       }
@@ -256,9 +237,8 @@ exports.edit = (req, res, next) => {
   const subtitle = req.body.subtitle;
   const description = req.body.description;
   const stolenOn = req.body.stolenOn;
-  const location = req.body.location;
   const tracking = req.body.tracking;
-  const recovered = req.body.recovered;
+  const location = req.body.location;
 
   let activitys = req.body.activitys;
   if (activitys) {
@@ -270,41 +250,16 @@ exports.edit = (req, res, next) => {
     security = security.map(s => s.trim());
   }
 
-  let reports = req.body.reports;
-  if (reports) {
-    reports = reports
-      .map(i => {
-        let item = {...i};
-        item.fromUserId = req.userId;
-        return item;
-      });
-  }
+  let groups = req.body.groups;
+  let reportDetails = req.body.reportDetails;
+
+  const recovered = req.body.recovered;
+
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
     return {...i, state: 'A'}
   });
   
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      stolen: {
-        _id: stolenId,
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        activitys: activitys,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: true
-    });
-  }
-
   Stolen.findById(stolenId)
     .then(stolen => {
       if (!stolen) {
@@ -321,15 +276,14 @@ exports.edit = (req, res, next) => {
       stolen.subtitle = subtitle;
       stolen.description = description;
       stolen.stolenOn = stolenOn;
-      stolen.location = location;
       stolen.tracking = tracking;
-      stolen.reports = reports;
+      stolen.location = location;
+      stolen.images = images;
       stolen.activitys = activitys;
       stolen.security = security;
+      stolen.groups = groups;
+      stolen.reportDetails = reportDetails;
       stolen.recovered = recovered;
-      if (images.length > 0) {
-        stolen.images = images;
-      }
       return stolen.save()
     })
     .then(result => {
@@ -362,6 +316,10 @@ exports.getItems = (req, res, next) => {
       }
       case 'activity': {
         query = { userId: req.userId, recovered: false, activitys: search };
+        break;
+      }
+      case 'group': {
+        query = { userId: req.userId, recovered: false };
         break;
       }
       case 'recovered': {
@@ -418,10 +376,9 @@ exports.getItems = (req, res, next) => {
 
 // POST request to delete stolen item from kitbag
 exports.delete = (req, res, next) => {
-  const stolenId = req.body.stolenId;
-  const confirm = req.body.confirm;
+  const stolenId = req.params.stolenId;
 
-  let stolenItem = {};
+  let sourceId;
 
   Stolen.findById(stolenId)
     .then(stolen => {
@@ -435,32 +392,45 @@ exports.delete = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      if (confirm !== 'delete') {
-        const error = new Error('You did not confirm the delete');
-        error.statusCode = 400;
-        throw error;
-      }
-      stolenItem = stolen;
-      return Kit.findById(stolen.sourceId);
-    })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to take any action on this item of related kit');
+      if (trade.recovered) {
+        const error = new Error('You have already recovered this item, so it cannot be deleted');
         error.statusCode = 403;
         throw error;
       }
-      kit.status = 0;
-      return kit.save();
+      sourceId = stolen.sourceId;
+      return stolen.delete();
     })
-    .then(result => {
-      return Stolen.deleteOne({ _id: stolenId, userId: req.userId });
+    .then(() => {
+      return User.findById(req.userId);
     })
-    .then(result => {
+    .then(user => {
+      user.package.size.stolen -= 1;
+      if (user.package.size.stolen < 0) {
+        user.package.size.stolen = 0;
+      }
+      return user.save();
+    })
+    .then(kit => {
+      if (sourceId) {
+        Kit.findById(sourceId)
+        .then(kit =>{
+          if (!kit) {
+            const error = new Error('The requested item of kit could not be found');
+            error.statusCode = 404;
+            throw error;
+          }
+          if (kit.userId.toString() !== req.userId.toString()) {
+            const error = new Error('You are not authorized to take any action on this item of related kit');
+            error.statusCode = 403;
+            throw error;
+          }
+          kit.status = 'owned';
+          return kit.save();
+        })
+      }
+      return;
+    })
+    .then(() => {
       res.status(200).json({ message: 'Stolen item deleted' });
     })
     .catch(err => {

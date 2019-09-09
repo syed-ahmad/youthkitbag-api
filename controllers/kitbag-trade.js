@@ -2,7 +2,6 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Trade = require('../models/trade');
 const User = require('../models/user');
-const { validationResult} = require('express-validator/check');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'traded', value: 'All Traded' } ];
 
@@ -51,11 +50,11 @@ exports.getAdd = (req, res, next) => {
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
         condition: sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
-        askingPrice: 0.01,
-        //location: user.location ? user.location : 
+        askingPrice: 0.00,
+        location: { type: ['Point'], coordinates: [-122.5, 37.7] }, 
         images: sourceKit.images,
         activitys: sourceKit.activitys,
-        groups: [],
+        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
         tradeDetails: {},
         traded: false,
         sourceId: sourceKit._id,
@@ -79,54 +78,21 @@ exports.add = (req, res, next) => {
   const askingPrice = +req.body.askingPrice;
   const location = req.body.location;
 
-  const activeImages = req.body.images.filter(i => i.state !== 'D');
-  const images = activeImages.map(i => {
-    return {...i, state: 'A'}
-  });
-  let origImages = req.body.origImages;
- 
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
   let groups = req.body.groups;
-  if (groups) {
-    groups = groups
-      .filter(i => i.title)
-      .map(i => {
-        let item = {...i};
-        return item;
-      });
-  }
 
   const traded = req.body.traded;
   const sourceId = req.body.sourceId;
 
-  // const validation = validationResult(req);
-  // let errors = [];
-  // if (!validation.isEmpty()) {
-  //   errors = validation.array();
-  // }
-  // if (errors.length) {
-  //   return res.status(422).json({
-  //     trade: {
-  //       title: title,
-  //       subtitle: subtitle,
-  //       description: description,
-  //       condition: condition,
-  //       askingPrice: askingPrice,
-  //       location: location,
-  //       activitys: activitys,
-  //       groups: groups,
-  //       traded: traded,
-  //       sourceId: sourceId,
-  //       userId: req.userId
-  //     },
-  //     errors: errors,
-  //     editing: false
-  //   });
-  // }
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
+  let origImages = req.body.origImages;
 
   const trade = new Trade({
     title: title,
@@ -135,6 +101,7 @@ exports.add = (req, res, next) => {
     condition: condition,
     askingPrice: askingPrice,
     location: location,
+    images: images && images.length > 0 ? images : origImages ? JSON.parse(origImages) : [],
     activitys: activitys,
     groups: groups,
     traded: traded,
@@ -142,72 +109,64 @@ exports.add = (req, res, next) => {
     userId: req.userId
   });
 
-
-  if (images.length > 0) {
-    trade.images = images;
-  } else {
-    //TODO: Can we make copies of images on s3 to remove dependency
-    trade.images = JSON.parse(origImages);
-  }
-
   let newTrade;
   let sourceUser;
 
   if (sourceId) {
     User.findById(req.userId)
-    .then (user => {
-      sourceUser = user;
-      return Trade.findOne({ sourceId: new ObjectId(sourceId) });
-    }) 
-    .then(existingTrade => {
-      if (existingTrade) {
-        const error = new Error('The requested item of kit is already listed for trade');
-        error.statusCode = 500;
-        throw error;
-      }
-      return Kit.findById(sourceId);
-    })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to trade this item of kit');
-        error.statusCode = 403;
-        throw error;
-      }
-      if (kit.status !== 'owned') {
-        const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
-        error.statusCode = 500;
-        throw error;
-      }
-      if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
-        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
-        error.statusCode = 500;
-        throw error;
-      }
-      kit.status = 'trade';
-      return kit.save();
-    })
-    .then(() => {
-      return trade.save();
-    })
-    .then(result => {
-      newTrade = result;
-      sourceUser.package.size.trade += 1;
-      return sourceUser.save();
-    })
-    .then(err => {
-      res.status(201).json({ trade: newTrade });
-    })
-    .catch(err => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
+      .then (user => {
+        sourceUser = user;
+        return Trade.findOne({ sourceId: new ObjectId(sourceId) });
+      }) 
+      .then(existingTrade => {
+        if (existingTrade) {
+          const error = new Error('The requested item of kit is already listed for trade');
+          error.statusCode = 500;
+          throw error;
+        }
+        return Kit.findById(sourceId);
+      })
+      .then(kit => {
+        if (!kit) {
+          const error = new Error('The requested item of kit could not be found');
+          error.statusCode = 404;
+          throw error;
+        }
+        if (kit.userId.toString() !== req.userId.toString()) {
+          const error = new Error('You are not authorized to trade this item of kit');
+          error.statusCode = 403;
+          throw error;
+        }
+        if (kit.status !== 'owned') {
+          const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
+          error.statusCode = 500;
+          throw error;
+        }
+        if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
+          const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
+          error.statusCode = 500;
+          throw error;
+        }
+        kit.status = 'trade';
+        return kit.save();
+      })
+      .then(() => {
+        return trade.save();
+      })
+      .then(result => {
+        newTrade = result;
+        sourceUser.package.size.trade += 1;
+        return sourceUser.save();
+      })
+      .then(err => {
+        res.status(201).json({ trade: newTrade });
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
   } else {
     User.findById(req.userId)
       .then (user => {
@@ -245,12 +204,12 @@ exports.getItem = (req, res, next) => {
     .findById(tradeId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('for trade item not found');
+        const error = new Error('The requested trade could not be found');
         error.statusCode = 404;
         throw error;
       }
       if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the item being traded');
+        const error = new Error('You are not authorized to edit this trade');
         error.statusCode = 403;
         throw error;
       }
@@ -274,25 +233,12 @@ exports.edit = (req, res, next) => {
   const askingPrice = +req.body.askingPrice;
   const location = req.body.location;
 
-  const activeImages = req.body.images.filter(i => i.state !== 'D');
-  const images = activeImages.map(i => {
-    return {...i, state: 'A'}
-  });
-
   let activitys = req.body.activitys;
   if (activitys) {
     activitys = activitys.map(s => s.trim().toLowerCase());
   }
 
   let groups = req.body.groups;
-  if (groups) {
-    groups = groups
-      .filter(i => i.title)
-      .map(i => {
-        let item = {...i};
-        return item;
-      });
-  }
 
   const tradeDetails = {
     tradedOn: req.body.tradedOn,
@@ -302,35 +248,11 @@ exports.edit = (req, res, next) => {
   };
 
   const traded = req.body.traded;
-  const sourceId = req.body.sourceId;
   
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      trade: {
-        _id: tradeId,
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        condition: condition,
-        askingPrice: askingPrice,
-        location: location,
-        images: images,
-        activitys: activitys,
-        groups: groups,
-        tradeDetails: tradeDetails,
-        traded: traded,
-        sourceId: sourceId,
-        userId: req.userId
-      },
-      errors: errors,
-      editing: true
-    });
-  }
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
+  const images = activeImages.map(i => {
+    return {...i, state: 'A'}
+  });
 
   Trade.findById(tradeId)
     .then(trade => {
@@ -447,72 +369,62 @@ exports.getItems = (req, res, next) => {
 
 // POST request to delete trade item from kitbag
 exports.delete = (req, res, next) => {
-  const tradeId = req.body.tradeId;
-  const confirm = req.body.confirm;
+  const tradeId = req.params.tradeId;
 
-  let tradeItem = {};
+  let sourceId;
 
   Trade.findById(tradeId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('The requested sale item could not be found');
+        const error = new Error('The requested trade could not be found');
         error.statusCode = 404;
         throw error;
       }
       if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this sale item');
+        const error = new Error('You are not authorized to delete this trade');
         error.statusCode = 403;
         throw error;
       }
-      if (confirm !== 'delete') {
-        const error = new Error('You did not confirm the delete');
-        error.statusCode = 400;
-        throw error;
-      }
-      tradeItem = trade;
-      return Kit.findById(trade.sourceId);
-    })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to take any action on this item of related kit');
+      if (trade.traded) {
+        const error = new Error('You have already traded this item, so it cannot be deleted');
         error.statusCode = 403;
         throw error;
       }
-      kit.status = 0;
-      return kit.save();
+      sourceId = trade.sourceId;
+      return trade.delete();
     })
-    .then(result => {
-      if (tradeItem.images) {
-        tradeItem.images.forEach((img, i) => {
-          //TODO: 
-          //fileHelper.checkSourceAndDeleteImage(img.image);
-        });
-      }
-      return Trade.deleteOne({ _id: tradeId, userId: req.userId });
-    })
-    .then(result => {
+    .then(() => {
       return User.findById(req.userId);
     })
-    .then(user => { 
+    .then(user => {
       user.package.size.trade -= 1;
       if (user.package.size.trade < 0) {
         user.package.size.trade = 0;
       }
       return user.save();
     })
-    .then(user => {
-      req.session.user = user;
-      return req.session.save(err => {
-        console.log(err);
-      });
+    .then(() => {
+      if (sourceId) {
+        Kit.findById(sourceId)
+          .then(kit => {
+            if (!kit) {
+              const error = new Error('The requested item of kit could not be found');
+              error.statusCode = 404;
+              throw error;
+            }
+            if (kit.userId.toString() !== req.userId.toString()) {
+              const error = new Error('You are not authorized to take any action on this item of related kit');
+              error.statusCode = 403;
+              throw error;
+            }
+            kit.status = 'owned';
+            return kit.save();
+          })
+      }
+      return;
     })
-    .then(err => {
-      res.status(200).json({ message: 'for trade item deleted' });
+    .then(() => {
+      res.status(200).json({ message: 'Trade deleted' });
     })
     .catch(err => {
       if (!err.statusCode) {
