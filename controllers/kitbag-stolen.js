@@ -21,7 +21,6 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      console.log('KIT', kit);
       if (!kit) {
         const error = new Error('The requested item of kit could not be found');
         error.statusCode = 404;

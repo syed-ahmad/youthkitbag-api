@@ -45,7 +45,7 @@ exports.getAdd = (req, res, next) => {
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
         offerPrice: 0.00,
-        location: { type: ['Point'], coordinates: [-122.5, 37.7] }, 
+        location: {}, 
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
