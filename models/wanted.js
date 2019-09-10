@@ -76,7 +76,30 @@ const wantedSchema = new Schema({
     },
     accepted: {
       type: Boolean
-    }
+    },
+    legit: {
+      type: Boolean
+    },
+    messages: [{
+      toOwner: {
+        type: Boolean
+      },
+      sentDate: {
+        type: Date
+      },
+      title: {
+        type: String
+      },
+      body: {
+        type: String
+      },
+      draft: {
+        type: Boolean
+      },
+      read: {
+        type: Boolean
+      }
+    }]
   }]
 }, { timestamps: true });
 

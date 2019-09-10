@@ -66,7 +66,7 @@ const tradeSchema = new Schema({
       }
     }
   ],
-  tradeDetails: {
+  tradeDetails: [{
     tradedOn: {
       type: Date
     },
@@ -79,8 +79,31 @@ const tradeSchema = new Schema({
     },
     complete: {
       type: Boolean
-    }
-  }
+    },
+    legit: {
+      type: Boolean
+    },
+    messages: [{
+      toOwner: {
+        type: Boolean
+      },
+      sentDate: {
+        type: Date
+      },
+      title: {
+        type: String
+      },
+      body: {
+        type: String
+      },
+      draft: {
+        type: Boolean
+      },
+      read: {
+        type: Boolean
+      }
+    }]
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Trade', tradeSchema);

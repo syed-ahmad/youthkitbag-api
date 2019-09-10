@@ -28,14 +28,13 @@ exports.getItem = (req, res, next) => {
 
 // GET request trade items based on search/pagination
 exports.getItems = (req, res, next) => {
-  console.log('QUERY', req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { traded: (by === 'hasbeentraded') };
+  let query = { traded: (by === 'traded') };
 
   if (search) {
     search = search.toLowerCase();
@@ -76,8 +75,17 @@ exports.getItems = (req, res, next) => {
         .limit(itemsPerPage);
     })
     .then(trades => {
+      const allTrades = trades.map(t => {
+        let nt = {};
+        nt._id = t._id;
+        nt.title = t.title;
+        nt.subtitle = t.subtitle;
+        nt.askingPrice = t.askingPrice;
+        nt.images = t.images;
+        return nt;
+      });
       res.status(200).json({
-        trades: trades,
+        trades: allTrades,
         filter: {
           by: by,
           search: search,

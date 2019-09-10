@@ -47,6 +47,10 @@ exports.getItems = (req, res, next) => {
         query = { obtained: false, activitys: search };
         break;
       }
+      case 'group': {
+        query = { userId: req.userId, traded: true };
+        break;
+      }
       case 'obtained': {
         query = { obtained: true };
         break;
@@ -107,4 +111,3 @@ exports.getItems = (req, res, next) => {
       next(err);
     });
 };
-

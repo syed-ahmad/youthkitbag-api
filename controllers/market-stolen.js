@@ -28,7 +28,6 @@ exports.getItem = (req, res, next) => {
 
 // GET request wanted items based on search/pagination
 exports.getItems = (req, res, next) => {
-  console.log('STQUERY', req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
@@ -49,7 +48,7 @@ exports.getItems = (req, res, next) => {
         break;
       }
       case 'group': {
-        query = { userId: req.userId, traded: true };
+        query = { userId: req.userId, recovered: true };
         break;
       }
       case 'recovered': {
@@ -68,16 +67,25 @@ exports.getItems = (req, res, next) => {
   Stolen
     .find(query)
     .countDocuments()
-    .then(numberOfStolens => {
-      totalItems = numberOfStolens;
+    .then(numberOfItems => {
+      totalItems = numberOfItems;
       return Stolen.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
     .then(stolens => {
+      const allStolens = stolens.map(s => {
+        let ns = {};
+        ns._id = s._id;
+        ns.title = s.title;
+        ns.subtitle = s.subtitle;
+        ns.offerPrice = s.offerPrice;
+        ns.images = s.images;
+        return ns;
+      });
       res.status(200).json({
-        stolens: stolens,
+        stolens: allStolens,
         filter: {
           by: by,
           search: search,
@@ -103,4 +111,3 @@ exports.getItems = (req, res, next) => {
       next(err);
     });
 };
-

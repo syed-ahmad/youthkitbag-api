@@ -55,7 +55,7 @@ exports.getAdd = (req, res, next) => {
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
-        tradeDetails: {},
+        tradeDetails: [],
         traded: false,
         sourceId: sourceKit._id,
         userId: req.userId
@@ -104,6 +104,7 @@ exports.add = (req, res, next) => {
     images: images && images.length > 0 ? images : origImages ? JSON.parse(origImages) : [],
     activitys: activitys,
     groups: groups,
+    tradeDetails: [],
     traded: traded,
     sourceId: sourceId,
     userId: req.userId
@@ -240,12 +241,7 @@ exports.edit = (req, res, next) => {
 
   let groups = req.body.groups;
 
-  const tradeDetails = {
-    tradedOn: req.body.tradedOn,
-    toUserId: req.body.toUserId,
-    tradePrice: req.body.tradePrice,
-    complete: req.body.complete
-  };
+  let tradeDetails = req.body.tradeDetails;
 
   const traded = req.body.traded;
   
