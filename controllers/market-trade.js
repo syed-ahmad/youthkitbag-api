@@ -1,7 +1,9 @@
 const Trade = require('../models/trade');
 
+const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'traded', value: 'All Traded' } ];
+
 // GET request a trade item
-exports.getItem = (req,res, next) => {
+exports.getItem = (req, res, next) => {
   const tradeId = req.params.tradeid;
   
   Trade
@@ -26,31 +28,36 @@ exports.getItem = (req,res, next) => {
 
 // GET request trade items based on search/pagination
 exports.getItems = (req, res, next) => {
+  console.log('QUERY', req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { hasbeentraded: (by === 'hasbeentraded') };
+  let query = { traded: (by === 'hasbeentraded') };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { hasbeentraded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = { traded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { hasbeentraded: false, activitys: search };
+        query = { traded: false, activitys: search };
         break;
       }
-      case 'hasbeentraded': {
-        query = { hasbeentraded: true };
+      case 'group': {
+        query = { userId: req.userId, traded: true };
+        break;
+      }
+      case 'traded': {
+        query = { userId: req.userId, traded: true };
         break;
       }
       default: {
-        query = { $and: [ { hasbeentraded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = { $and: [ { traded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
         break;
       }
     }
@@ -73,7 +80,8 @@ exports.getItems = (req, res, next) => {
         trades: trades,
         filter: {
           by: by,
-          search: search  
+          search: search,
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,
