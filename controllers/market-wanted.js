@@ -10,11 +10,19 @@ exports.getItem = (req, res, next) => {
     .findById(wantedId)
     .then(wanted => {
       if (!wanted) {
-        const error = new Error('The requested wanted item of kit could not be found');
+        const error = new Error('The requested wanted item could not be found');
         error.statusCode = 500;
         throw error;
       }
-      res.status(200).json(wanted);
+      res.status(200).json({
+        _id: wanted._id,
+        title: wanted.title,
+        subtitle: wanted.subtitle,
+        description: wanted.description,
+        offerPrice: wanted.offerPrice,
+        images: wanted.images,
+        activitys: wanted.activitys
+      });
     })
     .catch(err => {
       if (!err.statusCode) {

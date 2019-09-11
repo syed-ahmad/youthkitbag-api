@@ -4,18 +4,25 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // GET request a stolen item
 exports.getItem = (req, res, next) => {
-  const stolenId = req.params.stolenid;
+  const stolenId = req.params.stolenId;
 
   Stolen
     .findById(stolenId)
     .then(stolen => {
       if (!stolen) {
-        const error = new Error('The requested stolen item of kit could not be recovered');
+        const error = new Error('The requested stolen item count not be found');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        stolen: stolen
+        _id: stolen._id,
+        title: stolen.title,
+        subtitle: stolen.subtitle,
+        description: stolen.description,
+        stolenOn: stolen.stolenOn,
+        images: stolen.images,
+        activitys: stolen.activitys,
+        security: stolen.security
       });
     })
     .catch(err => {
