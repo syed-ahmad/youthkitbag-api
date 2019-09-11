@@ -4,7 +4,7 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // GET request a wanted item
 exports.getItem = (req, res, next) => {
-  const wantedId = req.params.wantedid;
+  const wantedId = req.params.wantedId;
   
   Wanted
     .findById(wantedId)
@@ -14,9 +14,7 @@ exports.getItem = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-      res.status(200).json({
-        wanted: wanted
-      });
+      res.status(200).json(wanted);
     })
     .catch(err => {
       if (!err.statusCode) {

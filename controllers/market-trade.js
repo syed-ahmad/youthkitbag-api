@@ -4,18 +4,25 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // GET request a trade item
 exports.getItem = (req, res, next) => {
-  const tradeId = req.params.tradeid;
+  const tradeId = req.params.tradeId;
   
   Trade
     .findById(tradeId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('The requested for trade item of kit could not be found');
+        const error = new Error('The requested trade could not be found');
         error.statusCode = 500;
         throw error;
       }
       res.status(200).json({
-        trade: trade
+        _id: trade._id,
+        title: trade.title,
+        subtitle: trade.subtitle,
+        description: trade.description,
+        condition: trade.condition,
+        askingPrice: trade.askingPrice,
+        images: trade.images,
+        activitys: trade.activitys
       });
     })
     .catch(err => {
