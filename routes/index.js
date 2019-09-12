@@ -3,6 +3,7 @@ const express = require('express');
 const isAuth = require('../middleware/is-auth');
 
 const accountRoutes = require('./account');
+const subscriptionRoutes = require('./subscription');
 const userRoutes = require('./user');
 const kitbagRoutes = require('./kitbag');
 const marketRoutes = require('./market');
@@ -13,6 +14,7 @@ const authRoutes = require('./auth');
 const router = express.Router();
 
 router.use('/account', isAuth, accountRoutes);
+router.use('/subscription', subscriptionRoutes);
 router.use('/user', isAuth, userRoutes);
 router.use('/kitbag', isAuth, kitbagRoutes);
 router.use('/market', marketRoutes);
