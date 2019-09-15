@@ -2,6 +2,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Stolen = require('../models/stolen');
 const User = require('../models/user');
+const { fixDateTime } = require('../util/date-helper');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'recovered', value: 'All Recovered' } ];
 
@@ -75,7 +76,8 @@ exports.add = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const stolenOn = req.body.stolenOn;
+  const stolenOn = fixDateTime(req.body.stolenOn);
+
   const location = req.body.location;
   const tracking = req.body.tracking;
  
@@ -235,7 +237,7 @@ exports.edit = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const stolenOn = req.body.stolenOn;
+  const stolenOn = fixDateTime(req.body.stolenOn);
   const tracking = req.body.tracking;
   const location = req.body.location;
 
