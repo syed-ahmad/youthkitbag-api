@@ -4,7 +4,7 @@ const Photo = require('../models/photo');
 const User = require('../models/user');
 const { validationResult} = require('express-validator/check');
 const awsHelper = require('../util/aws-helper');
-const { fixDateTime } = require('../util/date-helper');
+require('../util/date-helper');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'tag', value: 'Tag' }, { key: 'container', value: 'Container' }, { key: 'inactive', value: 'All Inactive' } ];
 
@@ -28,7 +28,7 @@ exports.add = (req, res, next) => {
         let item = {...i};
         item.price = +i.price;
         item.quantity = +i.quantity;
-        item.ondate = fixDateTime(i.ondate);
+        item.ondate = i.ondate.toFixDateTime();
         return item;
       });
   };
@@ -186,7 +186,7 @@ exports.edit = (req, res, next) => {
         let item = {...i};
         item.price = +i.price;
         item.quantity = +i.quantity;
-        item.ondate = fixDateTime(i.ondate);
+        item.ondate = i.ondate.toFixDateTime();
         return item;
       });
   };
