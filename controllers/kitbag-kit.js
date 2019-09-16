@@ -186,7 +186,7 @@ exports.edit = (req, res, next) => {
         let item = {...i};
         item.price = +i.price;
         item.quantity = +i.quantity;
-        item.ondate = dateHelper.fixDateTime(i.ondate);
+        item.ondate = fixDateTime(i.ondate);
         return item;
       });
   };

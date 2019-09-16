@@ -54,12 +54,12 @@ exports.getAdd = (req, res, next) => {
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         security: sourceKit.security,
-        stolenOn: '2019-01-01',
+        stolenOn: '',
         tracking: '',
         recovered: false,
         sourceId: sourceKit._id,
         userId: req.userId,
-        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
+        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, ''}) : [],
         reportDetails: []
       });
     })
