@@ -7,23 +7,23 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Nam
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
+
+  // this is standard code, but not required on every route 
   const validation = validationResult(req);
-  let errors = [];
   if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    const fieldErrors = {};
-    errors.forEach(e => { fieldErrors[e.param] = e.msg });
-    return res.status(422).json({
-      message: 'Errors have been identified on this page. Please correct them before continuing',
-      errors: fieldErrors
-    });
+    const errors = validation.array();
+    if (errors.length) {
+      const fieldErrors = {};
+      errors.forEach(e => { fieldErrors[e.param] = e.msg });
+      console.log(req.body);
+      return res.status(422).json({
+        message: 'Errors have been identified. Please correct them before continuing',
+        errors: fieldErrors
+      });
+    }
   }
 
-  const { name, tagline, description, email, website, location } = req.body;
-
-  const activitys = req.body.activitys ? req.body.activitys.clean(true) : [];
+  const { name, tagline, description, email, website, location, activitys } = req.body;
   
   let images = [];
   let imagesToDelete = [];
