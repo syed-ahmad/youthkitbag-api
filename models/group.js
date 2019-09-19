@@ -49,11 +49,20 @@ const groupSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
       },
-      active: {
-        type: Boolean,
+      state: {
+        type: String,
         required: true,
-        default: false
-      }
+        default: 'apply'
+      },
+      stateAt: {
+        type: Date,
+        required: true
+      },
+      comment: {
+        type: String
+      },
+      permission: [String]
+      // an array of permission levels, start with none. When approved then given M = member, but can be raised to M,A = member, admin - allows expansion of permission
     }
   ],
   adminId: {

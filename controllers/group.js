@@ -1,29 +1,25 @@
 const Group = require('../models/group');
 const User = require('../models/user');
-const { validationResult} = require('express-validator/check');
+const { validationResult } = require('express-validator/check');
+require('../util/array-helper');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' } ];
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
-  const name = req.body.name;
-  const tagline = req.body.tagline;
-  const description = req.body.description;
-  const email = req.body.email;
-  const website = req.body.website;
-  const location = req.body.location;
+  const { name, tagline, description, email, website, location } = req.body;
 
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
+  const activitys = req.body.activitys ? req.body.activitys.toClean(true) : [];
+
+  let images = [];
+  let imagesToDelete = [];
+  if (req.body.images) {
+    const approvedImages = req.body.images.filter(i => i.state !== 'D');
+    images = approvedImages.map(i => {
+      return {...i, state: 'A'}
+    });
+    imagesToDelete = req.body.images.filter(i => i.state === 'D');
   }
-
-  const approvalImages = req.body.images.filter(i => i.state !== 'D');
-  const images = approvalImages.map(i => {
-    return {...i, state: 'A'}
-  });
-
-  const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   const validation = validationResult(req);
   let errors = [];
