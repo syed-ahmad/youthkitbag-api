@@ -7,10 +7,23 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Nam
 
 // POST request to add a new group for approval
 exports.add = (req, res, next) => {
+  const validation = validationResult(req);
+  let errors = [];
+  if (!validation.isEmpty()) {
+    errors = validation.array();
+  }
+  if (errors.length) {
+    const fieldErrors = {};
+    errors.forEach(e => { fieldErrors[e.param] = e.msg });
+    return res.status(422).json({
+      message: 'Errors have been identified on this page. Please correct them before continuing',
+      errors: fieldErrors
+    });
+  }
+
   const { name, tagline, description, email, website, location } = req.body;
 
   const activitys = req.body.activitys ? req.body.activitys.clean(true) : [];
-  console.log(activitys);
   
   let images = [];
   let imagesToDelete = [];
@@ -18,30 +31,9 @@ exports.add = (req, res, next) => {
     const approvedImages = req.body.images.filter(i => i.state !== 'D');
     images = approvedImages.map(i => {
       return {...i, state: 'A'}
-    });
+    });  
     imagesToDelete = req.body.images.filter(i => i.state === 'D');
-  }
-
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      group: {
-        name: name,
-        tagline: tagline,
-        description: description,
-        email: email,
-        website: website,
-        location: location,
-        activitys: activitys
-      },
-      errors: errors,
-      editing: false
-    });
-  }
+  }  
 
   const group = new Group({
     name: name,

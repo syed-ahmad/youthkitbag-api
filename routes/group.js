@@ -9,7 +9,11 @@ const adminCheck = require('../middleware/admincheck');
 const router = express.Router();
 
 const groupValidation = [
-  body('name', 'Please enter a name of at least 5 characters').isLength({min: 5})
+  body('name', 'Please enter a name of at least 5 characters').isLength({min: 5}),
+  body('tagline', 'Please enter a tagline of at least 5 characters').isLength({min: 5}),
+  body('description', 'Please enter a description of at least 10 characters').isLength({min: 10}),
+  body('email', 'Please enter a valid email').isEmail(),
+  body('website', 'Please enter a valid website').isURL()
 ];
 
 router.post('', groupValidation, groupController.add);

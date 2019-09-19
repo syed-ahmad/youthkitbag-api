@@ -4,10 +4,8 @@ if (!Array.prototype.clean){
 
     if(!this) return [];
 
-    const arr = this.map(s => s.trim().replace(/ +/g, "-"));
-
-    if (!toLower) return arr;
-
-    return arr.toLowerCase();
+    return toLower ?
+      this.map(s => s.trim().replace(/ +/g, "-").toLowerCase()) :
+      this.map(s => s.trim().replace(/ +/g, "-"));
   }
 }

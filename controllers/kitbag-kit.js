@@ -2,7 +2,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Photo = require('../models/photo');
 const User = require('../models/user');
-const { validationResult} = require('express-validator/check');
+const { validationResult } = require('express-validator/check');
 const awsHelper = require('../util/aws-helper');
 require('../util/date-helper');
 
