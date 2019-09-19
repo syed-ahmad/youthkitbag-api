@@ -9,12 +9,25 @@ const stolenController = require('../controllers/kitbag-stolen');
 const router = express.Router();
 
 const kitValidation = [
-  body('title', 'Please enter a title of at least 5 characters').isLength({min: 5})
+  body('title', 'Please enter a title of at least 5 characters').trim().isLength({min: 5}),
+  body('subtitle').trim(),
+  body('description').trim(),
+  body('security.*').customSanitizer(value => value.trim().replace(/ +/g, "-")),
+  body('purchases.*.from').trim(),
+  body('purchases.*.quantity').toInt(),
+  body('purchases.*.ondate').toDate(),
+  body('purchases.*.price').toFloat(),
+  body('inbag.*.location').trim(),
+  body('inbag.*.quantity').toInt(),
+  body('warning').toInt(),
+  body('activitys.*').customSanitizer(value => value.trim().replace(/ +/g, "-").toLowerCase()),
+  body('tags.*').customSanitizer(value => value.trim().replace(/ +/g, "-").toLowerCase()),
+  body('tracking').trim()
 ];
 
 // all routes in this module require authentication
 router.post('/kit', kitValidation, kitController.add);
-router.get('/kit/containers', kitValidation, kitController.getContainers);
+router.get('/kit/containers', kitController.getContainers);
 router.put('/kit/:kitId', kitValidation, kitController.edit);
 router.delete('/kit/:kitId', kitController.delete);
 router.get('/kit/:kitId', kitController.getItem);

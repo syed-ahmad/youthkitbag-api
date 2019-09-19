@@ -18,6 +18,9 @@ const groupValidation = [
   body('activitys.*').customSanitizer((value) => value.trim().replace(/ +/g, "-").toLowerCase())
 ];
 
+// const groupMemberValidation = [
+// ];
+
 router.post('', groupValidation, groupController.add);
 // router.get('/group/:groupId/members', isGroupAdminAuth, groupController.getMembers);
 

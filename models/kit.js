@@ -20,16 +20,16 @@ const kitSchema = new Schema({
   security: [String],
   purchases: [
     {
-      price : {
+      from: {
+        type: String
+      },
+      quantity: {
         type: Number
       },
       ondate: {
         type: Date
       },
-      from: {
-        type: String
-      },
-      quantity: {
+      price : {
         type: Number
       }
     }
@@ -68,9 +68,6 @@ const kitSchema = new Schema({
   ],
   activitys: [String],
   tags: [String],
-  tracking: {
-    type: String
-  },
   active: {
     type: Boolean,
     default: true

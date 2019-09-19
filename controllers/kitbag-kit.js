@@ -10,85 +10,31 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const status = req.body.status;
 
-  let security = req.body.security;
-  if (security) {
-    security = security.map(s => s.trim());
-  }
-
-  let purchases = req.body.purchases;
-  if (purchases) {
-    purchases = purchases
-      .filter(i => i.from)
-      .map(i => {
-        let item = {...i};
-        item.price = +i.price;
-        item.quantity = +i.quantity;
-        item.ondate = i.ondate.fixDateTime();
-        return item;
+  // this is standard code, but not required on every route 
+  const validation = validationResult(req);
+  if (!validation.isEmpty()) {
+    const errors = validation.array();
+    if (errors.length) {
+      const fieldErrors = {};
+      errors.forEach(e => { fieldErrors[e.param] = e.msg });
+      return res.status(422).json({
+        message: 'Errors have been identified. Please correct them before continuing',
+        errors: fieldErrors
       });
-  };
-
-  let inbag = req.body.inbag;
-  if (inbag) {
-    inbag = inbag
-      .filter(i => i.location)
-      .map(i => {
-        let item = {...i};
-        item.quantity = +i.quantity;
-        return item;
-      });
+    }
   }
 
-  const warning = +req.body.warning || 0;
-  
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
+  const { title, subtitle, description, status, security, purchases, 
+    inbag, warning, activitys, tags, active } = req.body;
 
-  let tags = req.body.tags;
-  if (tags) {
-    tags = tags.map(s => s.trim().toLowerCase());
-  }
-
-  const active = req.body.active;
+  console.log(req.body);
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
     return {...i, state: 'A'}
   });
-
   const imagesToDelete = req.body.images.filter(i => i.state === 'D');
-
-    // const validation = validationResult(req);
-  // let errors = [];
-  // if (!validation.isEmpty()) {
-  //   errors = validation.array();
-  // }
-  // if (errors.length) {
-  //   return res.status(422).json({
-  //     kit: {
-  //       title: title,
-  //       subtitle: subtitle,
-  //       description: description,
-  //       status: status,
-  //       security: security,
-  //       purchases: purchases,
-  //       inbag: inbag,
-  //       warning: warning,
-  //       activitys: activitys,
-  //       tags: tags,
-  //       active: active
-  //     },
-  //     errors: errors,
-  //     editing: false
-  //   });
-  // }
 
   const kit = new Kit({
     title: title,
@@ -107,7 +53,6 @@ exports.add = (req, res, next) => {
   });
   
   let newKit;
-  // const imageIds = images.map(i => i.photoId );
 
   imagesToDelete.forEach(i => {
     awsHelper.deleteImage(i.image);
@@ -168,53 +113,25 @@ exports.getItem = (req, res, next) => {
 // PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
   const kitId = req.params.kitId;
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const status = req.body.status;
-  
-  let security = req.body.security;
-  if (security) {
-    security = security.map(s => s.trim());
-  }
 
-  let purchases = req.body.purchases;
-  if (purchases) {
-    purchases = purchases
-      .filter(i => i.from)
-      .map(i => {
-        let item = {...i};
-        item.price = +i.price;
-        item.quantity = +i.quantity;
-        item.ondate = i.ondate.fixDateTime();
-        return item;
+  // this is standard code, but not required on every route 
+  const validation = validationResult(req);
+  if (!validation.isEmpty()) {
+    const errors = validation.array();
+    if (errors.length) {
+      const fieldErrors = {};
+      errors.forEach(e => { fieldErrors[e.param] = e.msg });
+      return res.status(422).json({
+        message: 'Errors have been identified. Please correct them before continuing',
+        errors: fieldErrors
       });
-  };
-
-  let inbag = req.body.inbag;
-  if (inbag) {
-    inbag = inbag
-      .filter(i => i.location)
-      .map(i => {
-        let item = {...i};
-        item.quantity = +i.quantity;
-        return item;
-      });
+    }
   }
 
-  const warning = +req.body.warning || 0;
+  const { title, subtitle, description, status, security, purchases, 
+    inbag, warning, activitys, tags, active } = req.body;
 
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let tags = req.body.tags;
-  if (tags) {
-    tags = tags.map(s => s.trim().toLowerCase());
-  }
-
-  const active = req.body.active;
+  console.log(req.body);
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -222,32 +139,6 @@ exports.edit = (req, res, next) => {
   });
 
   const imagesToDelete = req.body.images.filter(i => i.state === 'D');
-
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      kit: {
-        _id: kitId,
-        title: title,
-        subtitle: subtitle,
-        description: description,
-        status: status,
-        security: security,
-        purchases: purchases,
-        inbag: inbag,
-        warning: warning,
-        activitys: activitys,
-        tags: tags,
-        active: active
-      },
-      errors: errors,
-      editing: true
-    });
-  }
 
   imagesToDelete.forEach(i => {
     awsHelper.deleteImage(i.image);
