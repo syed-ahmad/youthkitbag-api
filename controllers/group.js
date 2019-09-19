@@ -9,8 +9,9 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Nam
 exports.add = (req, res, next) => {
   const { name, tagline, description, email, website, location } = req.body;
 
-  const activitys = req.body.activitys ? req.body.activitys.toClean(true) : [];
-
+  const activitys = req.body.activitys ? req.body.activitys.clean(true) : [];
+  console.log(activitys);
+  
   let images = [];
   let imagesToDelete = [];
   if (req.body.images) {

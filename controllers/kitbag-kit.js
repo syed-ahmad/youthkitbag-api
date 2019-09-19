@@ -28,7 +28,7 @@ exports.add = (req, res, next) => {
         let item = {...i};
         item.price = +i.price;
         item.quantity = +i.quantity;
-        item.ondate = i.ondate.toFixDateTime();
+        item.ondate = i.ondate.fixDateTime();
         return item;
       });
   };
@@ -186,7 +186,7 @@ exports.edit = (req, res, next) => {
         let item = {...i};
         item.price = +i.price;
         item.quantity = +i.quantity;
-        item.ondate = i.ondate.toFixDateTime();
+        item.ondate = i.ondate.fixDateTime();
         return item;
       });
   };

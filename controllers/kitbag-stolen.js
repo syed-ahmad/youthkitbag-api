@@ -76,7 +76,7 @@ exports.add = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const stolenOn = req.body.stolenOn.toFixDateTime();
+  const stolenOn = req.body.stolenOn.fixDateTime();
 
   const location = req.body.location;
   const tracking = req.body.tracking;
@@ -237,7 +237,7 @@ exports.edit = (req, res, next) => {
   const title = req.body.title;
   const subtitle = req.body.subtitle;
   const description = req.body.description;
-  const stolenOn = req.body.stolenOn.toFixDateTime();
+  const stolenOn = req.body.stolenOn.fixDateTime();
   const tracking = req.body.tracking;
   const location = req.body.location;
 

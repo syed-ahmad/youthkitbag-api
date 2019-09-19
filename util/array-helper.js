@@ -1,8 +1,13 @@
-Array.prototype.toClean = function(toLower) {
-  if(!this) return [];
-  if (!toLower) {
-    return this.map(s => s.trim().replace(/ +/g, "-"));
-  }
+if (!Array.prototype.clean){
+  Array.prototype.clean = function(toLower) {
+    'use strict';
 
-  return this.map(s => s.trim().replace(/ +/g, "-").toLowerCase());
+    if(!this) return [];
+
+    const arr = this.map(s => s.trim().replace(/ +/g, "-"));
+
+    if (!toLower) return arr;
+
+    return arr.toLowerCase();
+  }
 }
