@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const sgMail = require('@sendgrid/mail');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const { validationResult} = require('express-validator/check');
+const { validationResult} = require('express-validator');
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const DOMAIN_URL = process.env.DOMAIN_URL || 'http://localhost:5000';

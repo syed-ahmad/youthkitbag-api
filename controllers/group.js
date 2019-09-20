@@ -1,6 +1,6 @@
 const Group = require('../models/group');
 const User = require('../models/user');
-const { validationResult } = require('express-validator/check');
+const { validationResult } = require('express-validator');
 require('../util/array-helper');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' } ];

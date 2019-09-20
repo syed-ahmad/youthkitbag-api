@@ -2,7 +2,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Photo = require('../models/photo');
 const User = require('../models/user');
-const { validationResult } = require('express-validator/check');
+const { validationResult } = require('express-validator');
 const awsHelper = require('../util/aws-helper');
 require('../util/date-helper');
 
@@ -11,24 +11,8 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
 
-  // this is standard code, but not required on every route 
-  const validation = validationResult(req);
-  if (!validation.isEmpty()) {
-    const errors = validation.array();
-    if (errors.length) {
-      const fieldErrors = {};
-      errors.forEach(e => { fieldErrors[e.param] = e.msg });
-      return res.status(422).json({
-        message: 'Errors have been identified. Please correct them before continuing',
-        errors: fieldErrors
-      });
-    }
-  }
-
   const { title, subtitle, description, status, security, purchases, 
     inbag, warning, activitys, tags, active } = req.body;
-
-  console.log(req.body);
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -113,20 +97,6 @@ exports.getItem = (req, res, next) => {
 // PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
   const kitId = req.params.kitId;
-
-  // this is standard code, but not required on every route 
-  const validation = validationResult(req);
-  if (!validation.isEmpty()) {
-    const errors = validation.array();
-    if (errors.length) {
-      const fieldErrors = {};
-      errors.forEach(e => { fieldErrors[e.param] = e.msg });
-      return res.status(422).json({
-        message: 'Errors have been identified. Please correct them before continuing',
-        errors: fieldErrors
-      });
-    }
-  }
 
   const { title, subtitle, description, status, security, purchases, 
     inbag, warning, activitys, tags, active } = req.body;
