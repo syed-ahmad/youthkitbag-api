@@ -24,41 +24,8 @@ exports.getProfile = (req, res, next) => {
 };
 
 exports.postProfile = (req, res, next) => {
-  const username = req.body.username;
-  const image = req.file;
-  const imageUrl = req.body.imageUrl;
-  const origImage = req.body.origImage;
-  const origImageUrl = req.body.origImageUrl;
 
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.split(',').map(s => s.trim().toLowerCase());
-  }
-
-  let groups = req.body.groups;
-  if (groups) {
-    groups = groups.split(',').map(s => s.trim().toLowerCase());
-  }
-
-  const validation = validationResult(req);
-  let errors = [];
-  if (!validation.isEmpty()) {
-    errors = validation.array();
-  }
-  if (errors.length) {
-    return res.status(422).json({
-      user: {
-        profile: {
-          username: username
-        },
-        image: image || origImage,
-        imageUrl: imageUrl || origImageUrl,
-        activitys: activitys,
-        groups: groups
-      },
-      errors: errors
-    });
-  }
+  const { username, activitys, groups } = req.body;
 
   User
     .findById(req.userIdÓ)

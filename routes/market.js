@@ -1,10 +1,8 @@
 const express = require('express');
-
 const tradeController = require('../controllers/market-trade');
 const wantedController = require('../controllers/market-wanted');
 const stolenController = require('../controllers/market-stolen');
 const marketController = require('../controllers/market');
-
 const isAuth = require('../middleware/is-auth');;
 
 const router = express.Router();

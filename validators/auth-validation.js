@@ -41,6 +41,3 @@ exports.newPasswordValidation = [
   check('passwordToken').not().isEmpty().withMessage('The password token is required'),
   check('password').trim().isLength({min: 5}).withMessage('Password must be at least 5 characters')
 ];
-
-
-
