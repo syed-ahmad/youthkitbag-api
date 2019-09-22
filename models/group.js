@@ -45,7 +45,7 @@ const groupSchema = new Schema({
   activitys: [String],
   members: [
     {
-      userId:  {
+      user:  {
         type: Schema.Types.ObjectId,
         ref: 'User'
       },
@@ -65,12 +65,12 @@ const groupSchema = new Schema({
       // an array of permission levels, start with none. When approved then given M = member, but can be raised to M,A = member, admin - allows expansion of permission
     }
   ],
-  adminId: {
+  admin: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  approval: {
+  status: {
     type: String,
     required: true,
     default: 'requested'

@@ -101,8 +101,6 @@ exports.edit = (req, res, next) => {
   const { title, subtitle, description, status, security, purchases, 
     inbag, warning, activitys, tags, active } = req.body;
 
-  console.log(req.body);
-
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
     return {...i, state: 'A'}

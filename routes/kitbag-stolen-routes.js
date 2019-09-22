@@ -1,6 +1,6 @@
 const express = require('express');
 const stolenController = require('../controllers/kitbag-stolen');
-const checkValidationResult = require('../middleware/checkValidationResult');
+const checkValidationResult = require('../middleware/check-validation-result');
 const { kitbagValidation, stolenValidation } = require('../validators/kitbag-validation');
 
 const router = express.Router();

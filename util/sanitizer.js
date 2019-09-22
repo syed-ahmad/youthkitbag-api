@@ -15,3 +15,5 @@ exports.commaToArray = value => {
 exports.caseTagFormat = value => value.trim().replace(/ +/g, "-");
 
 exports.lowTagFormat = value => value.trim().replace(/ +/g, "-").toLowerCase();
+
+exports.lower = value => value.toLowerCase();

@@ -1,6 +1,6 @@
 const express = require('express');
 const tradeController = require('../controllers/kitbag-trade');
-const checkValidationResult = require('../middleware/checkValidationResult');
+const checkValidationResult = require('../middleware/check-validation-result');
 const { kitbagValidation, tradeValidation } = require('../validators/kitbag-validation');
 
 const router = express.Router();
