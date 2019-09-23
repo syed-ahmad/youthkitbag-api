@@ -55,7 +55,7 @@ exports.add = (req, res, next) => {
     .then(user => {
       user.package.size.groupadmins += 1;
       user.package.size.groups += 1;
-      res.status(201).json({ group: newGroup });
+      res.status(200).json({ message: `Group "${newGroup.name}" successfully created. Approval requested.`, _id: newGroup._id });
       return user.save();
     })
     .catch(err => {
@@ -87,9 +87,8 @@ exports.editStatus = (req, res, next) => {
       group.status = status;
       return group.save();
     })
-    .then(result => {
-      const group = mapGroup(result, req, false);
-      res.status(200).json(group);
+    .then(group => {
+      res.status(200).json({ message: `Status of group "${group.name}" successfully changed.`});
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -301,7 +300,7 @@ exports.getItems = (req, res, next) => {
         .limit(itemsPerPage);
     })
     .then(groups => {
-      const allGroups = mapGroups(groups);
+      const allGroups = mapGroups(groups, req);
       res.status(200).json({
         groups: allGroups,
         filter: {
@@ -367,9 +366,7 @@ function mapGroups(groups, req) {
     ng.activitys = g.activitys;
     ng.images = g.images;
     ng.memberCount = g.members.length;
-    ng.groupMember = req.groupMember;
-    ng.groupAdmin = req.groupAdmin;
-    ng.appAdmin = req.appAdmin;
+    ng.appAdmin = (req.userId.toString() === process.env.ADMIN_USER);
     return ng;
   });
 }
@@ -380,7 +377,7 @@ function mapGroup(group, req, incAdmin) {
     name: group.name,
     tagline: group.tagline,
     description: group.description,
-    email: group.email,
+    email: (req.appAdmin || req.groupAdmin) ? group.email : '',
     website: group.website,
     members: group.members.length,
     images: group.images,
