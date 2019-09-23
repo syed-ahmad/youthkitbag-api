@@ -25,11 +25,11 @@ exports.kitValidation = [
 ];
 
 exports.tradeValidation = [
-  body('askingPrice').toFloat()
+  body('askingPrice').toFloat().isFloat({min: 1})
 ];
 
 exports.wantedValidation = [
-  body('offerPrice').toFloat()
+  body('offerPrice').toFloat().isFloat({min: 1})
 ];
 
 exports.stolenValidation = [
