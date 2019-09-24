@@ -55,7 +55,7 @@ exports.add = (req, res, next) => {
     .then(user => {
       user.package.size.groupadmins += 1;
       user.package.size.groups += 1;
-      res.status(200).json({ message: `Group "${newGroup.name}" successfully created. Approval requested.`, _id: newGroup._id });
+      res.status(200).json({ message: `Group "${newGroup.name}" successfully created. Approval requested.`, group: newGroup });
       return user.save();
     })
     .catch(err => {

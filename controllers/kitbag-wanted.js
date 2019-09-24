@@ -65,21 +65,7 @@ exports.getAdd = (req, res, next) => {
 
 // POST request to add a new item into wanted
 exports.add = (req, res, next) => {
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const offerPrice = +req.body.offerPrice;
-  const location = req.body.location;
-
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let groups = req.body.groups;
-
-  const obtained = req.body.obtained;
-  const sourceId = req.body.sourceId;
+  const { title, subtitle, description, offerPrice, location, activitys, groups, obtained, sourceId } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -139,7 +125,7 @@ exports.add = (req, res, next) => {
       })
       .then(result => {
         newWanted = result;
-        res.status(201).json({ wanted: newWanted });
+        res.status(201).json({ message: `Wanted item "${newWanted.title}" successfully created.`, wanted: newWanted });
       })
       .catch(err => {
         if (!err.statusCode) {
@@ -165,7 +151,7 @@ exports.add = (req, res, next) => {
         return sourceUser.save();
       })
       .then(() => {
-        res.status(201).json({ wanted: newWanted });
+        res.status(201).json({ message: `Wanted item "${newWanted.title}" successfully created.`, wanted: newWanted });
       })
       .catch(err => {
         if (!err.statusCode) {

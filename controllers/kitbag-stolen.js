@@ -73,28 +73,7 @@ exports.getAdd = (req, res, next) => {
 
 // POST request to add a new item into stolen
 exports.add = (req, res, next) => {
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const stolenOn = req.body.stolenOn.fixDateTime();
-
-  const location = req.body.location;
-  const tracking = req.body.tracking;
- 
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let groups = req.body.groups;
-
-  let security = req.body.security;
-  if (security) {
-    security = security.map(s => s.trim());
-  }
-
-  const recovered = req.body.recovered;
-  const sourceId = req.body.sourceId;
+  const { title, subtitle, description, stolenOn, location, tracking, activitys, groups, security, recovered, sourceId } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -167,7 +146,7 @@ exports.add = (req, res, next) => {
       return sourceUser.save();
     })
     .then(err => {
-      res.status(201).json({ stolen: newStolen });
+      res.status(201).json({ message: `Stolen item "${newStolen.title}" successfully reported.`, stolen: newStolen });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -193,7 +172,7 @@ exports.add = (req, res, next) => {
         return sourceUser.save();
       })
       .then(() => {
-        res.status(201).json({ stolen: newStolen });
+        res.status(201).json({ message: `Stolen item "${newStolen.title}" successfully reported.`, stolen: newStolen });
       })
       .catch(err => {
         if (!err.statusCode) {

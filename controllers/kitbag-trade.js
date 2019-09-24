@@ -71,22 +71,7 @@ exports.getAdd = (req, res, next) => {
 
 // POST request to add a new item into trade
 exports.add = (req, res, next) => {
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const condition = req.body.condition;
-  const askingPrice = +req.body.askingPrice;
-  const location = req.body.location;
-
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let groups = req.body.groups;
-
-  const traded = req.body.traded;
-  const sourceId = req.body.sourceId;
+  const { title, subtitle, description, condition, askingPrice, location, activitys, groups, traded, sourceId } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -160,7 +145,7 @@ exports.add = (req, res, next) => {
         return sourceUser.save();
       })
       .then(err => {
-        res.status(201).json({ trade: newTrade });
+        res.status(201).json({ message: `Trade item "${newTrade.title}" successfully created.`, trade: newTrade });
       })
       .catch(err => {
         if (!err.statusCode) {
@@ -186,7 +171,7 @@ exports.add = (req, res, next) => {
         return sourceUser.save();
       })
       .then(() => {
-        res.status(201).json({ trade: newTrade });
+        res.status(201).json({ message: `Trade item "${newTrade.title}" successfully created.`, trade: newTrade });
       })
       .catch(err => {
         if (!err.statusCode) {
@@ -368,6 +353,7 @@ exports.delete = (req, res, next) => {
   const tradeId = req.params.tradeId;
 
   let sourceId;
+  let tradeTitle;
 
   Trade.findById(tradeId)
     .then(trade => {
@@ -387,6 +373,7 @@ exports.delete = (req, res, next) => {
         throw error;
       }
       sourceId = trade.sourceId;
+      tradeTitle = trade.title;
       return trade.delete();
     })
     .then(() => {
@@ -420,7 +407,7 @@ exports.delete = (req, res, next) => {
       return;
     })
     .then(() => {
-      res.status(200).json({ message: 'Trade deleted' });
+      res.status(201).json({ message: `Trade item "${tradeTitle}" successfully deleted.` });
     })
     .catch(err => {
       if (!err.statusCode) {

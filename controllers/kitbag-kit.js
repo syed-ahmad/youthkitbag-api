@@ -56,7 +56,7 @@ exports.add = (req, res, next) => {
           return user.save();
         })
         .then(() => {
-          res.status(201).json({ kit: newKit });
+          res.status(201).json({ message: `Item of kit "${newKit.title}" successfully created.`, kit: newKit });
         });
     })
     .catch(err => {

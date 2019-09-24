@@ -25,16 +25,16 @@ exports.kitValidation = [
 ];
 
 exports.tradeValidation = [
-  body('askingPrice').toFloat().isFloat({min: 1})
+  body('askingPrice', 'Please enter a valid amount. It can be zero, if you want to give this item away for free').toFloat().isFloat({min: 0, max: 99999.99})
 ];
 
 exports.wantedValidation = [
-  body('offerPrice').toFloat().isFloat({min: 1})
+  body('offerPrice', 'Please enter a valid amount. It can be zero, if you only want to receive free offers').toFloat().isFloat({min: 0, max: 99999.99})
 ];
 
 exports.stolenValidation = [
   body('security').customSanitizer(commaToArray),
   body('security.*').customSanitizer(caseTagFormat),
-  body('stolenOn', 'Please specify the date the item was stolen').isISO8601().toDate(),
+  //body('stolenOn', 'Please specify the date the item was stolen').isISO8601().toDate(),
   body('tracking').trim()
 ];
