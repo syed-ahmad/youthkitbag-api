@@ -1,5 +1,6 @@
 const Group = require('../models/group');
 const User = require('../models/user');
+const { getPagination } = require('../util/list-helper');
 
 const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' } ];
 
@@ -93,7 +94,7 @@ exports.editStatus = (req, res, next) => {
 exports.editMemberState = (req, res, next) => {
   const { groupId, memberId, state } = req.params;
 
-  const validStates = [ 'approved', 'suspended' ];
+  const validStates = [ 'approved', 'rejected', 'suspended' ];
   let updated = false;
 
   Group.findById(groupId)
@@ -113,7 +114,7 @@ exports.editMemberState = (req, res, next) => {
         if (m.state !== state) {
           m.state = state;
           m.stateAt = Date.now();
-          m.permission = (state === 'suspended') ? [] : ['member'];
+          m.permission = (state === 'suspended' || state === 'rejected') ? [] : ['member'];
           updated = true;
         }
         return m;
@@ -145,8 +146,11 @@ exports.joinMember = (req, res, next) => {
     permission: []
   }
 
+  let groupName;
+
   Group.findById(groupId)
     .then(group => {
+      groupName = group.name;
       group.members.push(member);
       return group.save();
     })
@@ -156,7 +160,7 @@ exports.joinMember = (req, res, next) => {
     .then(user => {
       user.package.size.groups += 1;
       user.profile.groups.push(groupId);
-      res.status(201).json({ membership: 'requested' });
+      res.status(201).json({ message: `Your request to join group "${groupName}" has been submitted to the group administrator.` });
       return user.save();
     })
     .catch(err => {
@@ -181,7 +185,7 @@ exports.leaveMember = (req, res, next) => {
         throw error;
       }
       const members = group.members.map(m => {
-        if (m._id !== req.userId) return m
+        if (m._id !== req.userId) return m;
         if (m.state !== 'left') {
           m.state = 'left';
           m.stateAt = Date.now();
@@ -203,7 +207,7 @@ exports.leaveMember = (req, res, next) => {
       }
       const updateMessage = updated ?
         `Your request to leave this group has been accepted.` : 
-        `Your request to leave this group could not be completed.`;
+        `Your request to leave this group could not be completed as you have already left the group.`;
       res.status(201).json(updateMessage);
       return user.save();
     })
@@ -411,16 +415,4 @@ function mapUser(user) {
   };
 }
 
-function getPagination(totalItems, itemsPerPage, page, by, search) {
-  return {
-    totalItems: totalItems,
-    itemsPerPage: itemsPerPage,
-    currentPage: page,
-    hasNextPage: itemsPerPage * page < totalItems,
-    hasPreviousPage: page > 1,
-    nextPage: page + 1,
-    previousPage: page - 1,
-    lastPage: Math.ceil(totalItems / itemsPerPage),
-    filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
-  };
-}
+
