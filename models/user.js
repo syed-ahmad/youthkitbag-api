@@ -41,7 +41,10 @@ const userSchema = new Schema({
         type: [Number]
       }
     },
-    groups: [String],
+    groups: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Group'
+    }],
     activitys: [String],
     badges: [String]
   },

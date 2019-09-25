@@ -1,8 +1,5 @@
-const ObjectId = require('mongoose').Types.ObjectId; 
 const Kit = require('../models/kit');
-const Photo = require('../models/photo');
 const User = require('../models/user');
-const { validationResult } = require('express-validator');
 const awsHelper = require('../util/aws-helper');
 require('../util/date-helper');
 
@@ -10,9 +7,7 @@ const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Ti
 
 // POST request to add a new item into kitbag
 exports.add = (req, res, next) => {
-
-  const { title, subtitle, description, status, security, purchases, 
-    inbag, warning, activitys, tags, active } = req.body;
+  const { title, subtitle, description, status, security, purchases, inbag, warning, activitys, tags, active } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -42,22 +37,15 @@ exports.add = (req, res, next) => {
     awsHelper.deleteImage(i.image);
   });
 
-  kit
-    .save()
+  kit.save()
     .then(result => {
       newKit = result;
-      // Photo
-      //   .find({ _id: { $in: imageIds}})
-      //   .updateMany({ sourceId: result._id, sourceType: 'kit' });
-      User
-        .findById(req.userId)
-        .then (user => { 
-          user.package.size.kit += 1;
-          return user.save();
-        })
-        .then(() => {
-          res.status(201).json({ message: `Item of kit "${newKit.title}" successfully created.`, kit: newKit });
-        });
+      return User.findById(req.userId);
+    })
+    .then (user => { 
+      user.package.size.kit += 1;
+      res.status(201).json({ message: `Item of kit "${newKit.title}" successfully created.`, kit: newKit });
+      return user.save();
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -74,16 +62,6 @@ exports.getItem = (req, res, next) => {
   Kit
     .findById(kitId)
     .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit this item of kit');
-        error.statusCode = 403;
-        throw error;
-      }
       res.status(200).json(kit);
     })
     .catch(err => {
@@ -97,9 +75,7 @@ exports.getItem = (req, res, next) => {
 // PUT request to save edited changes to existing item in kitbag
 exports.edit = (req, res, next) => {
   const kitId = req.params.kitId;
-
-  const { title, subtitle, description, status, security, purchases, 
-    inbag, warning, activitys, tags, active } = req.body;
+  const { title, subtitle, description, status, security, purchases, inbag, warning, activitys, tags, active } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -114,16 +90,6 @@ exports.edit = (req, res, next) => {
 
   Kit.findById(kitId)
     .then(kit => {
-      if (!kit) {
-        const error = new Error('Kit not found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit this item of kit');
-        error.statusCode = 403;
-        throw error;
-      }
       kit.title = title;
       kit.subtitle = subtitle;
       kit.description = description;
@@ -140,10 +106,7 @@ exports.edit = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
-      // Photo
-      //   .find({ _id: { $in: imageIds}})
-      //   .updateMany({ sourceId: result._id, sourceType: 'kit' });
-      res.status(200).json({ kit: result });
+      res.status(201).json({ message: `Item of kit "${result.title}" successfully updated.`, kit: result });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -246,36 +209,28 @@ exports.getItems = (req, res, next) => {
 // POST request to delete item from kitbag
 exports.delete = (req, res, next) => {
   const kitId = req.params.kitId;
-  
+
+  let kitTitle;  
+
   Kit.findById(kitId)
     .then(kit => {
-      if (!kit) {
-        const error = new Error('Kit not found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this item of kit');
-        error.statusCode = 403;
-        throw error;
-      }
       if (kit.images) {
         kit.images.forEach((img, i) => {
           awsHelper.deleteImage(img.image);
         });
       }
+      kitTitle = kit.title;
       return Kit.deleteOne({ _id: kitId, userId: req.userId });
     })
     .then(() => {
-      User
-      .findById(req.userId)
-      .then (user => { 
-        user.package.size.kit -= 1;
-        return user.save();
-      })
-      .then(() => {
-        res.status(200).json({ message: 'Kit item deleted'});
-      });
+      User.findById(req.userId)
+        .then (user => { 
+          user.package.size.kit -= 1;
+          return user.save();
+        })
+        .then(() => {
+          res.status(201).json({ message: `Item of kit "${kitTitle}" successfully deleted.` });
+        });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -287,12 +242,11 @@ exports.delete = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getContainers = (req, res, next) => {
-
   let query = { userId: req.userId, active: true, tags: 'container' };
   let orderby = { title: 1 };
 
-  Kit
-    .find(query).sort(orderby)
+  Kit.find(query)
+    .sort(orderby)
     .then(kits => {
       res.status(200).json({
         containers: kits.map(k => k.title)

@@ -55,6 +55,7 @@ exports.add = (req, res, next) => {
     .then(user => {
       user.package.size.groupadmins += 1;
       user.package.size.groups += 1;
+      user.profile.groups.push(newGroup._id);
       res.status(200).json({ message: `Group "${newGroup.name}" successfully created. Approval requested.`, group: newGroup });
       return user.save();
     })
@@ -66,7 +67,7 @@ exports.add = (req, res, next) => {
     });
 };
 
-// PUT request group to be deactivated (the actual deactivation is done by appAdmin)
+// PUT request to edit status is only available to appAdmin
 // awaiting approval, approved, suspended, awaiting deactivation, deactivated
 exports.editStatus = (req, res, next) => {
   const groupId = req.params.groupId;
@@ -74,21 +75,11 @@ exports.editStatus = (req, res, next) => {
 
   Group.findById(groupId)
     .then(group => {
-      if (group.status === 'suspended' && req.appAdmin !== true) {
-        const error = new Error('The requested group is currently suspended and cannot be deactivated');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (req.appAdmin !== true && status !== 'awaiting deactivation') {
-        const error = new Error(`You do not have permission to change the group status to ${status}`);
-        error.statusCode = 404;
-        throw error;
-      }
       group.status = status;
       return group.save();
     })
     .then(group => {
-      res.status(200).json({ message: `Status of group "${group.name}" successfully changed.`});
+      res.status(200).json({ message: `Status of group "${group.name}" successfully changed to "${status}".`});
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -131,9 +122,7 @@ exports.editMemberState = (req, res, next) => {
       return group.save();
     })
     .then(() => {
-      const updateMessage = updated ? 
-        `Member updated to state ${state}.` :
-        `Member not updated as they already have state ${state}.`;
+      const updateMessage = updated ? `Member updated to state ${state}.` : `Member not updated as they already have state ${state}.`;
       res.status(200).json({ message: updateMessage});
     })
     .catch(err => {
@@ -166,6 +155,7 @@ exports.joinMember = (req, res, next) => {
     })
     .then(user => {
       user.package.size.groups += 1;
+      user.profile.groups.push(groupId);
       res.status(201).json({ membership: 'requested' });
       return user.save();
     })
@@ -208,6 +198,7 @@ exports.leaveMember = (req, res, next) => {
     })
     .then(user => {
       if (updated) {
+        user.profile.groups = user.profile.groups.filter(g => g !== groupId);
         user.package.size.groups += 1;
       }
       const updateMessage = updated ?

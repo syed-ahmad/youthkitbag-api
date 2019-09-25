@@ -13,7 +13,7 @@ exports.getAdd = (req, res, next) => {
 
   Trade.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentTrade => {
-      if (currentTrade) {
+      if (currentTrade && !currentTrade.traded) {
         const error = new Error('The requested item of kit is already listed for trade');
         error.statusCode = 500;
         throw error;
@@ -21,16 +21,6 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to trade this item of kit');
-        error.statusCode = 403;
-        throw error;
-      }
       if (kit.status !== 'owned') {
         const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
         error.statusCode = 500;
@@ -40,11 +30,6 @@ exports.getAdd = (req, res, next) => {
       return User.findById(req.userId);
     })
     .then (user => { 
-      if (user.package.max.trade <= user.package.size.trade) {
-        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
-        error.statusCode = 500;
-        throw error;
-      }
       res.status(200).json({
         title: sourceKit.title,
         subtitle: sourceKit.subtitle,
@@ -91,19 +76,15 @@ exports.add = (req, res, next) => {
     groups: groups,
     tradeDetails: [],
     traded: traded,
-    sourceId: sourceId,
+    sourceId: undefined,
     userId: req.userId
   });
 
   let newTrade;
-  let sourceUser;
 
   if (sourceId) {
-    User.findById(req.userId)
-      .then (user => {
-        sourceUser = user;
-        return Trade.findOne({ sourceId: new ObjectId(sourceId) });
-      }) 
+    Trade
+      .findOne({ sourceId: new ObjectId(sourceId) })
       .then(existingTrade => {
         if (existingTrade) {
           const error = new Error('The requested item of kit is already listed for trade');
@@ -113,23 +94,8 @@ exports.add = (req, res, next) => {
         return Kit.findById(sourceId);
       })
       .then(kit => {
-        if (!kit) {
-          const error = new Error('The requested item of kit could not be found');
-          error.statusCode = 404;
-          throw error;
-        }
-        if (kit.userId.toString() !== req.userId.toString()) {
-          const error = new Error('You are not authorized to trade this item of kit');
-          error.statusCode = 403;
-          throw error;
-        }
         if (kit.status !== 'owned') {
           const error = new Error('Item in kitbag does not have status of Owned, and therefore cannot be listed for trade');
-          error.statusCode = 500;
-          throw error;
-        }
-        if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
-          const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
           error.statusCode = 500;
           throw error;
         }
@@ -137,15 +103,17 @@ exports.add = (req, res, next) => {
         return kit.save();
       })
       .then(() => {
+        trade.sourceId = sourceId;
         return trade.save();
       })
       .then(result => {
         newTrade = result;
-        sourceUser.package.size.trade += 1;
-        return sourceUser.save();
+        return User.findById(req.userId);
       })
-      .then(err => {
+      .then(user => {
+        user.package.size.trade += 1;
         res.status(201).json({ message: `Trade item "${newTrade.title}" successfully created.`, trade: newTrade });
+        return user.save();
       })
       .catch(err => {
         if (!err.statusCode) {
@@ -153,33 +121,25 @@ exports.add = (req, res, next) => {
         }
         next(err);
       });
-  } else {
-    User.findById(req.userId)
-      .then (user => {
-        sourceUser = user;
-        if (sourceUser.package.max.trade <= sourceUser.package.size.trade) {
-          const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
-          error.statusCode = 500;
-          throw error;
-        }
-        trade.sourceId = undefined;
-        return trade.save();
-      })
-      .then(result => {
-        newTrade = result;
-        sourceUser.package.size.trade += 1;
-        return sourceUser.save();
-      })
-      .then(() => {
-        res.status(201).json({ message: `Trade item "${newTrade.title}" successfully created.`, trade: newTrade });
-      })
-      .catch(err => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
-        }
-        next(err);
-      });
-  }
+    } else {
+      trade
+        .save()
+        .then(result => {
+          newTrade = result;
+          return User.findById(req.userId);
+        })
+        .then(user => {
+          user.package.size.trade += 1;
+          res.status(201).json({ message: `Item for trade "${newTrade.title}" successfully created.`, trade: newTrade });
+          return user.save();
+        })
+        .catch(err => {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
+        });
+    }
 };
 
 // GET request to get an already existing trade item
@@ -189,16 +149,6 @@ exports.getItem = (req, res, next) => {
   Trade
     .findById(tradeId)
     .then(trade => {
-      if (!trade) {
-        const error = new Error('The requested trade could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit this trade');
-        error.statusCode = 403;
-        throw error;
-      }
       res.status(200).json(trade);
     })
     .catch(err => {
@@ -211,24 +161,8 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const tradeId = req.body._id;
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const condition = req.body.condition;
-  const askingPrice = +req.body.askingPrice;
-  const location = req.body.location;
-
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let groups = req.body.groups;
-
-  let tradeDetails = req.body.tradeDetails;
-
-  const traded = req.body.traded;
+  const tradeId = req.body.paramsId;
+  const { title, subtitle, description, condition, askingPrice, location, activitys, groups, tradeDetails, traded } = req.body;
   
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -237,16 +171,6 @@ exports.edit = (req, res, next) => {
 
   Trade.findById(tradeId)
     .then(trade => {
-      if (!trade) {
-        const error = new Error('Trade item not found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the kit being traded');
-        error.statusCode = 403;
-        throw error;
-      }
       trade.title = title;
       trade.subtitle = subtitle;
       trade.description = description;
@@ -261,7 +185,7 @@ exports.edit = (req, res, next) => {
       return trade.save()
     })
     .then(result => {
-      res.status(200).json({ trade: result });
+      res.status(201).json({ message: `Item for trade "${result.title}" successfully updated.`, trade: result });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -357,16 +281,6 @@ exports.delete = (req, res, next) => {
 
   Trade.findById(tradeId)
     .then(trade => {
-      if (!trade) {
-        const error = new Error('The requested trade could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (trade.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this trade');
-        error.statusCode = 403;
-        throw error;
-      }
       if (trade.traded) {
         const error = new Error('You have already traded this item, so it cannot be deleted');
         error.statusCode = 403;
@@ -407,7 +321,7 @@ exports.delete = (req, res, next) => {
       return;
     })
     .then(() => {
-      res.status(201).json({ message: `Trade item "${tradeTitle}" successfully deleted.` });
+      res.status(201).json({ message: `Item for trade "${tradeTitle}" successfully deleted.` });
     })
     .catch(err => {
       if (!err.statusCode) {

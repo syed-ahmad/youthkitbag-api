@@ -14,7 +14,7 @@ exports.getAdd = (req, res, next) => {
 
   Stolen.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentStolen => {
-      if (currentStolen) {
+      if (currentStolen && !currentStolen.recovered) {
         const error = new Error('The requested item of kit is already listed as stolen');
         error.statusCode = 500;
         throw error;
@@ -22,16 +22,6 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to report this item of kit as stolen');
-        error.statusCode = 403;
-        throw error;
-      }
       if (kit.status !== 'owned' && kit.status !== 'trade') {
         const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
         error.statusCode = 500;
@@ -41,11 +31,6 @@ exports.getAdd = (req, res, next) => {
       return User.findById(req.userId);
     })
     .then (user => {
-      if (user.package.max.stolen <= user.package.size.stolen) {
-        const error = new Error('You have already reached the limits of your trade package. Please upgrade to trade more items.');
-        error.statusCode = 500;
-        throw error;
-      }
       res.status(200).json({
         title: sourceKit.title,
         subtitle: sourceKit.subtitle,
@@ -92,87 +77,44 @@ exports.add = (req, res, next) => {
     activitys: activitys,
     security: security,
     recovered: recovered,
-    sourceId: sourceId,
+    sourceId: undefined,
     userId: req.userId
   });
 
   let newStolen;
-  let sourceUser;
 
   if (sourceId) {
-  User.findById(req.userId)
-    .then (user => {
-      sourceUser = user;
-      return Stolen.findOne({ sourceId: new ObjectId(sourceId) });
-    }) 
-    .then(existingStolen => {
-      if (existingStolen) {
-        const error = new Error('The requested item of kit is already listed as stolen');
-        error.statusCode = 500;
-        throw error;
-      }
-      return Kit.findById(sourceId);
-    })
-    .then(kit => {
-      if (!kit) {
-        const error = new Error('The requested item of kit could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (kit.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to report this item of kit as stolen');
-        error.statusCode = 403;
-        throw error;
-      }
-      if (kit.status !== 'owned' && kit.status !== 'trade') {
-        const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
-        error.statusCode = 500;
-        throw error;
-      }
-      if (sourceUser.package.max.stolen <= sourceUser.package.size.stolen) {
-        const error = new Error('You have already reached the limits of reporting stolen items in your trade package. However, we understand at this stressful time you may need more, so please contact us.');
-        error.statusCode = 500;
-        throw error;
-      }
-      kit.status = 'stolen';
-      return kit.save();
-    })
-    .then(() => {
-      return stolen.save();
-    })
-    .then(result => {
-      newStolen = result;
-      sourceUser.package.size.stolen += 1;
-      return sourceUser.save();
-    })
-    .then(err => {
-      res.status(201).json({ message: `Stolen item "${newStolen.title}" successfully reported.`, stolen: newStolen });
-    })
-    .catch(err => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      next(err);
-    });
-  } else {
-    User.findById(req.userId)
-      .then (user => {
-        sourceUser = user;
-        if (sourceUser.package.max.stolen <= sourceUser.package.size.stolen) {
-          const error = new Error('You have already reached the limits of your stolen package. Please upgrade to trade more items.');
+    Stolen
+      .findOne({ sourceId: new ObjectId(sourceId) })
+      .then(existingStolen => {
+        if (existingStolen) {
+          const error = new Error('The requested item of kit is already listed as stolen');
           error.statusCode = 500;
           throw error;
         }
-        stolen.sourceId = undefined;
+        return Kit.findById(sourceId);
+      })
+      .then(kit => {
+        if (kit.status !== 'owned' && kit.status !== 'trade') {
+          const error = new Error('Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen');
+          error.statusCode = 500;
+          throw error;
+        }
+        kit.status = 'stolen';
+        return kit.save();
+      })
+      .then(() => {
+        stolen.sourceId = sourceId;
         return stolen.save();
       })
       .then(result => {
         newStolen = result;
-        sourceUser.package.size.stolen += 1;
-        return sourceUser.save();
+        return User.findById(req.userId);
       })
-      .then(() => {
+      .then(user => {
+        user.package.size.stolen += 1;
         res.status(201).json({ message: `Stolen item "${newStolen.title}" successfully reported.`, stolen: newStolen });
+        return user.save();
       })
       .catch(err => {
         if (!err.statusCode) {
@@ -180,7 +122,25 @@ exports.add = (req, res, next) => {
         }
         next(err);
       });
-  }
+    } else {
+      stolen
+        .save()
+        .then(result => {
+          newStolen = result;
+          return User.findById(req.userId);
+        })
+        .then(user => {
+          user.package.size.stolen += 1;
+          res.status(201).json({ message: `Stolen item "${newStolen.title}" successfully reported.`, stolen: newStolen });
+          return user.save();
+        })
+        .catch(err => {
+          if (!err.statusCode) {
+            err.statusCode = 500;
+          }
+          next(err);
+        });
+    }
 };
 
 // GET request to get an already existing stolen item
@@ -190,16 +150,6 @@ exports.getItem = (req, res, next) => {
   Stolen
     .findById(stolenId)
     .then(stolen => {
-      if (!stolen) {
-        const error = new Error('The requested stolen item could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (stolen.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the item listed as stolen');
-        error.statusCode = 403;
-        throw error;
-      }
       res.status(200).json(stolen);
     })
     .catch(err => {
@@ -212,28 +162,8 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const stolenId = req.body._id;
-  const title = req.body.title;
-  const subtitle = req.body.subtitle;
-  const description = req.body.description;
-  const stolenOn = req.body.stolenOn.fixDateTime();
-  const tracking = req.body.tracking;
-  const location = req.body.location;
-
-  let activitys = req.body.activitys;
-  if (activitys) {
-    activitys = activitys.map(s => s.trim().toLowerCase());
-  }
-
-  let security = req.body.security;
-  if (security) {
-    security = security.map(s => s.trim());
-  }
-
-  let groups = req.body.groups;
-  let reportDetails = req.body.reportDetails;
-
-  const recovered = req.body.recovered;
+  const stolenId = req.params.stolenId;
+  const { title, subtitle, description, stolenOn, tracking, location, activitys, security, groups, recovered } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -242,16 +172,6 @@ exports.edit = (req, res, next) => {
   
   Stolen.findById(stolenId)
     .then(stolen => {
-      if (!stolen) {
-        const error = new Error('Stolen item not found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (stolen.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to edit the kit reported as stolend');
-        error.statusCode = 403;
-        throw error;
-      }
       stolen.title = title;
       stolen.subtitle = subtitle;
       stolen.description = description;
@@ -267,7 +187,7 @@ exports.edit = (req, res, next) => {
       return stolen.save()
     })
     .then(result => {
-      res.status(200).json({ stolen: result });
+      res.status(201).json({ message: `Stolen item "${result.title}" successfully updated.`, stolen: result });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -362,16 +282,6 @@ exports.delete = (req, res, next) => {
 
   Stolen.findById(stolenId)
     .then(stolen => {
-      if (!stolen) {
-        const error = new Error('The requested stolen item could not be found');
-        error.statusCode = 404;
-        throw error;
-      }
-      if (stolen.userId.toString() !== req.userId.toString()) {
-        const error = new Error('You are not authorized to delete this item');
-        error.statusCode = 403;
-        throw error;
-      }
       if (trade.recovered) {
         const error = new Error('You have already recovered this item, so it cannot be deleted');
         error.statusCode = 403;

@@ -4,6 +4,7 @@ const groupCheck = require('../middleware/group-check');
 const isGroupMemberAuth = require('../middleware/is-group-member-auth');
 const isNotGroupMemberAuth = require('../middleware/not-group-member-auth');
 const isGroupAdminAuth = require('../middleware/is-group-admin-auth');
+const isAppAdminAuth = require('../middleware/is-app-admin-auth');
 const hasGroupAdmin = require('../middleware/has-group-admin');
 const hasGroupMember = require('../middleware/has-group-member');
 const checkValidationResult = require('../middleware/check-validation-result');
@@ -21,7 +22,7 @@ router.post('', hasGroupAdmin, hasGroupMember, groupValidation, checkValidationR
 // they must be group admin for the defined group
 // their group admin count will NOT be released (to prevent autobots creating groups)
 
-router.put('/:groupId/status', groupCheck, isGroupAdminAuth, groupController.editStatus);
+router.put('/:groupId/status', groupCheck, isAppAdminAuth, groupController.editStatus);
 
 // group admin users can change the status of a member (to state 'apply,approved,blocked,suspended,rejected,left')
 // they must be group admin for the defined group
