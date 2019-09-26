@@ -410,7 +410,8 @@ function mapUser(user) {
   return {
     _id: user._id,
     username: user.profile.username,
-    fullname: user.profile.fullname,
+    firstname: user.profile.firstname,
+    lastname: user.profile.lastname,
     imageUrl: user.profile.imageUrl
   };
 }
