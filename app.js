@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose'); 
+const mongoose = require('mongoose');
 const path = require('path');
 const uuidv4 = require('uuid/v4');
 const multer = require('multer');
@@ -26,7 +26,7 @@ const s3Storage = multerS3({
   s3: s3,
   bucket: process.env.AWS_S3_BUCKET,
   metadata: function (req, file, cb) {
-    cb(null, {fieldName: file.fieldname});
+    cb(null, { fieldName: file.fieldname });
   },
   key: function (req, file, cb) {
     cb(null, 'ykb-' + uuidv4() + '-' + file.originalname);
@@ -45,7 +45,7 @@ app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-app.use(multer({storage: s3Storage, limits: { fileSize: 512000 }, fileFilter: imagesFilter}).single('photo'));
+app.use(multer({ storage: s3Storage, limits: { fileSize: 512000 }, fileFilter: imagesFilter }).single('photo'));
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -54,8 +54,11 @@ app.use((req, res, next) => {
   next();
 });
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS;
+if (!allowedOrigins) throw new Error('Missing ALLOWED_ORIGINS environment variable');
+
 const corsOptions = {
-  origin: ['http://localhost:3000','https://youthkitbagweb.herokuapp.com'],
+  origin: allowedOrigins.split(','),
   optionsSuccessStatus: 200
 };
 
