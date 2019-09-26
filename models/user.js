@@ -26,7 +26,10 @@ const userSchema = new Schema({
     imageUrl: {
       type: String
     },
-    fullname: {
+    firstname: {
+      type: String
+    },
+    lastname: {
       type: String
     },
     username: {
