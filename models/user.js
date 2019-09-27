@@ -20,12 +20,6 @@ const userSchema = new Schema({
     default: false
   },
   profile: {
-    image: {
-      type: String
-    },
-    imageUrl: {
-      type: String
-    },
     firstname: {
       type: String
     },
@@ -48,6 +42,16 @@ const userSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'Group'
     }],
+    images: [
+      {
+        image: {
+          type: String
+        },
+        imageUrl: {
+          type: String
+        }  
+      }  
+    ],
     activitys: [String],
     badges: [String]
   },
