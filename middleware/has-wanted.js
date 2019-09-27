@@ -1,4 +1,4 @@
-const User = require("../models/user");
+const User = require('../models/user');
 
 // make sure that the user has not reached the limit of kit that they can add
 // we limit this to prevent bots creating excessive kit and overpopulating the system
@@ -9,7 +9,7 @@ module.exports = (req, res, next) => {
     .then(user => {
       if (user.package.size.wanted >= user.package.max.wanted) {
         const error = new Error(
-          "You have reached the limit of wanted items that you can create on your account. Please upgrade your account."
+          'You have reached the limit of wanted items that you can create on your account. Please upgrade your account.'
         );
         error.statusCode = 404;
         throw error;

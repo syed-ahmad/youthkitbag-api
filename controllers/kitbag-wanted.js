@@ -1,14 +1,14 @@
-const ObjectId = require("mongoose").Types.ObjectId;
-const Kit = require("../models/kit");
-const Wanted = require("../models/wanted");
-const User = require("../models/user");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Kit = require('../models/kit');
+const Wanted = require('../models/wanted');
+const User = require('../models/user');
 
 const filterOptions = [
-  { key: "all", value: "All" },
-  { key: "title", value: "Title" },
-  { key: "activity", value: "Activity" },
-  { key: "group", value: "Group" },
-  { key: "obtained", value: "All Recovered" }
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'group', value: 'Group' },
+  { key: 'obtained', value: 'All Recovered' }
 ];
 
 // GET request to return kit item as item for wanted
@@ -21,7 +21,7 @@ exports.getAdd = (req, res, next) => {
     .then(currentWanted => {
       if (currentWanted && !currentWanted.obtained) {
         const error = new Error(
-          "The requested item of kit is already actively listed as wanted"
+          'The requested item of kit is already actively listed as wanted'
         );
         error.statusCode = 500;
         throw error;
@@ -43,7 +43,7 @@ exports.getAdd = (req, res, next) => {
         activitys: sourceKit.activitys,
         groups: user.groups
           ? user.groups.map(g => {
-              g.groupId, g.name, "2019-01-01";
+              g.groupId, g.name, '2019-01-01';
             })
           : [],
         offerDetails: [],
@@ -74,9 +74,9 @@ exports.add = (req, res, next) => {
     sourceId
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
   let origImages = req.body.origImages;
 
@@ -107,7 +107,7 @@ exports.add = (req, res, next) => {
       .then(currentWanted => {
         if (currentWanted && !currentWanted.obtained) {
           const error = new Error(
-            "The requested item of kit is already actively listed as wanted"
+            'The requested item of kit is already actively listed as wanted'
           );
           error.statusCode = 500;
           throw error;
@@ -121,12 +121,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.wanted += 1;
-        res
-          .status(201)
-          .json({
-            message: `Wanted item "${newWanted.title}" successfully created.`,
-            wanted: newWanted
-          });
+        res.status(201).json({
+          message: `Wanted item "${newWanted.title}" successfully created.`,
+          wanted: newWanted
+        });
         return user.save();
       })
       .catch(err => {
@@ -144,12 +142,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.wanted += 1;
-        res
-          .status(201)
-          .json({
-            message: `Wanted item "${newWanted.title}" successfully created.`,
-            wanted: newWanted
-          });
+        res.status(201).json({
+          message: `Wanted item "${newWanted.title}" successfully created.`,
+          wanted: newWanted
+        });
         return user.save();
       })
       .catch(err => {
@@ -192,9 +188,9 @@ exports.edit = (req, res, next) => {
     obtained
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
 
   Wanted.findById(wantedId)
@@ -212,12 +208,10 @@ exports.edit = (req, res, next) => {
       return wanted.save();
     })
     .then(result => {
-      res
-        .status(201)
-        .json({
-          message: `Wanted item "${result.title}" successfully updated.`,
-          wanted: result
-        });
+      res.status(201).json({
+        message: `Wanted item "${result.title}" successfully updated.`,
+        wanted: result
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -235,28 +229,28 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, obtained: by === "obtained" };
+  let query = { userId: req.userId, obtained: by === 'obtained' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case "title": {
+      case 'title': {
         query = {
           userId: req.userId,
           obtained: false,
-          title: { $regex: `.*${search}.*`, $options: "i" }
+          title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
-      case "activity": {
+      case 'activity': {
         query = { userId: req.userId, obtained: false, activitys: search };
         break;
       }
-      case "group": {
+      case 'group': {
         query = { userId: req.userId, obtained: true };
         break;
       }
-      case "obtained": {
+      case 'obtained': {
         query = { userId: req.userId, obtained: true };
         break;
       }
@@ -267,7 +261,7 @@ exports.getItems = (req, res, next) => {
             { obtained: false },
             {
               $or: [
-                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
                 { activitys: search }
               ]
             }
@@ -307,7 +301,7 @@ exports.getItems = (req, res, next) => {
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
           filterUrl:
-            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
@@ -341,11 +335,9 @@ exports.delete = (req, res, next) => {
       return user.save();
     })
     .then(() => {
-      res
-        .status(201)
-        .json({
-          message: `Wanted item "${wantedTitle}" successfully deleted.`
-        });
+      res.status(201).json({
+        message: `Wanted item "${wantedTitle}" successfully deleted.`
+      });
     })
     .catch(err => {
       if (!err.statusCode) {

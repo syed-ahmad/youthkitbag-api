@@ -1,15 +1,15 @@
-const ObjectId = require("mongoose").Types.ObjectId;
-const Kit = require("../models/kit");
-const Stolen = require("../models/stolen");
-const User = require("../models/user");
-require("../util/date-helper");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Kit = require('../models/kit');
+const Stolen = require('../models/stolen');
+const User = require('../models/user');
+require('../util/date-helper');
 
 const filterOptions = [
-  { key: "all", value: "All" },
-  { key: "title", value: "Title" },
-  { key: "activity", value: "Activity" },
-  { key: "group", value: "Group" },
-  { key: "recovered", value: "All Recovered" }
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'group', value: 'Group' },
+  { key: 'recovered', value: 'All Recovered' }
 ];
 
 // GET request to return kit item as item for stolen
@@ -22,7 +22,7 @@ exports.getAdd = (req, res, next) => {
     .then(currentStolen => {
       if (currentStolen && !currentStolen.recovered) {
         const error = new Error(
-          "The requested item of kit is already listed as stolen"
+          'The requested item of kit is already listed as stolen'
         );
         error.statusCode = 500;
         throw error;
@@ -30,9 +30,9 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      if (kit.status !== "owned" && kit.status !== "trade") {
+      if (kit.status !== 'owned' && kit.status !== 'trade') {
         const error = new Error(
-          "Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen"
+          'Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen'
         );
         error.statusCode = 500;
         throw error;
@@ -49,14 +49,14 @@ exports.getAdd = (req, res, next) => {
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         security: sourceKit.security,
-        stolenOn: "",
-        tracking: "",
+        stolenOn: '',
+        tracking: '',
         recovered: false,
         sourceId: sourceKit._id,
         userId: req.userId,
         groups: user.groups
           ? user.groups.map(g => {
-              g.groupId, g.name, "";
+              g.groupId, g.name, '';
             })
           : [],
         reportDetails: []
@@ -86,9 +86,9 @@ exports.add = (req, res, next) => {
     sourceId
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
   let origImages = req.body.origImages;
 
@@ -119,7 +119,7 @@ exports.add = (req, res, next) => {
       .then(existingStolen => {
         if (existingStolen) {
           const error = new Error(
-            "The requested item of kit is already listed as stolen"
+            'The requested item of kit is already listed as stolen'
           );
           error.statusCode = 500;
           throw error;
@@ -127,14 +127,14 @@ exports.add = (req, res, next) => {
         return Kit.findById(sourceId);
       })
       .then(kit => {
-        if (kit.status !== "owned" && kit.status !== "trade") {
+        if (kit.status !== 'owned' && kit.status !== 'trade') {
           const error = new Error(
-            "Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen"
+            'Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen'
           );
           error.statusCode = 500;
           throw error;
         }
-        kit.status = "stolen";
+        kit.status = 'stolen';
         return kit.save();
       })
       .then(() => {
@@ -147,12 +147,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.stolen += 1;
-        res
-          .status(201)
-          .json({
-            message: `Stolen item "${newStolen.title}" successfully reported.`,
-            stolen: newStolen
-          });
+        res.status(201).json({
+          message: `Stolen item "${newStolen.title}" successfully reported.`,
+          stolen: newStolen
+        });
         return user.save();
       })
       .catch(err => {
@@ -170,12 +168,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.stolen += 1;
-        res
-          .status(201)
-          .json({
-            message: `Stolen item "${newStolen.title}" successfully reported.`,
-            stolen: newStolen
-          });
+        res.status(201).json({
+          message: `Stolen item "${newStolen.title}" successfully reported.`,
+          stolen: newStolen
+        });
         return user.save();
       })
       .catch(err => {
@@ -219,9 +215,9 @@ exports.edit = (req, res, next) => {
     recovered
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
 
   Stolen.findById(stolenId)
@@ -241,12 +237,10 @@ exports.edit = (req, res, next) => {
       return stolen.save();
     })
     .then(result => {
-      res
-        .status(201)
-        .json({
-          message: `Stolen item "${result.title}" successfully updated.`,
-          stolen: result
-        });
+      res.status(201).json({
+        message: `Stolen item "${result.title}" successfully updated.`,
+        stolen: result
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -264,28 +258,28 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, recovered: by === "recovered" };
+  let query = { userId: req.userId, recovered: by === 'recovered' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case "title": {
+      case 'title': {
         query = {
           userId: req.userId,
           recovered: false,
-          title: { $regex: `.*${search}.*`, $options: "i" }
+          title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
-      case "activity": {
+      case 'activity': {
         query = { userId: req.userId, recovered: false, activitys: search };
         break;
       }
-      case "group": {
+      case 'group': {
         query = { userId: req.userId, recovered: false };
         break;
       }
-      case "recovered": {
+      case 'recovered': {
         query = { userId: req.userId, recovered: true };
         break;
       }
@@ -296,7 +290,7 @@ exports.getItems = (req, res, next) => {
             { recovered: false },
             {
               $or: [
-                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
                 { activitys: search }
               ]
             }
@@ -336,7 +330,7 @@ exports.getItems = (req, res, next) => {
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
           filterUrl:
-            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
@@ -358,7 +352,7 @@ exports.delete = (req, res, next) => {
     .then(stolen => {
       if (trade.recovered) {
         const error = new Error(
-          "You have already recovered this item, so it cannot be deleted"
+          'You have already recovered this item, so it cannot be deleted'
         );
         error.statusCode = 403;
         throw error;
@@ -381,26 +375,26 @@ exports.delete = (req, res, next) => {
         Kit.findById(sourceId).then(kit => {
           if (!kit) {
             const error = new Error(
-              "The requested item of kit could not be found"
+              'The requested item of kit could not be found'
             );
             error.statusCode = 404;
             throw error;
           }
           if (kit.userId.toString() !== req.userId.toString()) {
             const error = new Error(
-              "You are not authorized to take any action on this item of related kit"
+              'You are not authorized to take any action on this item of related kit'
             );
             error.statusCode = 403;
             throw error;
           }
-          kit.status = "owned";
+          kit.status = 'owned';
           return kit.save();
         });
       }
       return;
     })
     .then(() => {
-      res.status(200).json({ message: "Stolen item deleted" });
+      res.status(200).json({ message: 'Stolen item deleted' });
     })
     .catch(err => {
       if (!err.statusCode) {

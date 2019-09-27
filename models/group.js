@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
@@ -27,7 +27,7 @@ const groupSchema = new Schema(
     location: {
       type: {
         type: String,
-        enum: ["Point"]
+        enum: ['Point']
       },
       coordinates: {
         type: [Number]
@@ -48,12 +48,12 @@ const groupSchema = new Schema(
       {
         user: {
           type: Schema.Types.ObjectId,
-          ref: "User"
+          ref: 'User'
         },
         state: {
           type: String,
           required: true,
-          default: "apply"
+          default: 'apply'
         },
         stateAt: {
           type: Date,
@@ -68,16 +68,16 @@ const groupSchema = new Schema(
     ],
     admin: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true
     },
     status: {
       type: String,
       required: true,
-      default: "requested"
+      default: 'requested'
     }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Group", groupSchema);
+module.exports = mongoose.model('Group', groupSchema);

@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const pointSchema = require("./point");
+const mongoose = require('mongoose');
+const pointSchema = require('./point');
 
 const Schema = mongoose.Schema;
 
@@ -18,7 +18,7 @@ const stolenSchema = new Schema(
     location: {
       type: {
         type: String,
-        enum: ["Point"]
+        enum: ['Point']
       },
       coordinates: {
         type: [Number]
@@ -47,18 +47,18 @@ const stolenSchema = new Schema(
     },
     sourceId: {
       type: Schema.Types.ObjectId,
-      ref: "Kit"
+      ref: 'Kit'
     },
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true
     },
     groups: [
       {
         groupId: {
           type: Schema.Types.ObjectId,
-          ref: "Group"
+          ref: 'Group'
         },
         name: {
           type: String
@@ -75,7 +75,7 @@ const stolenSchema = new Schema(
         },
         fromUserId: {
           type: Schema.Types.ObjectId,
-          ref: "User"
+          ref: 'User'
         },
         details: {
           type: String
@@ -114,4 +114,4 @@ const stolenSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Stolen", stolenSchema);
+module.exports = mongoose.model('Stolen', stolenSchema);

@@ -1,4 +1,4 @@
-const Group = require("../models/group");
+const Group = require('../models/group');
 
 module.exports = (req, res, next) => {
   req.appAdmin = req.userId.toString() === process.env.ADMIN_USER;
@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
   Group.findOne(query, match)
     .then(group => {
       if (!group) {
-        const error = new Error("The requested group could not be found");
+        const error = new Error('The requested group could not be found');
         error.statusCode = 404;
         throw error;
       }
@@ -24,8 +24,8 @@ module.exports = (req, res, next) => {
       ) {
         next();
       } else {
-        req.groupAdmin = group.members[0].permission.includes("admin");
-        req.groupMember = group.members[0].permission.includes("member");
+        req.groupAdmin = group.members[0].permission.includes('admin');
+        req.groupMember = group.members[0].permission.includes('member');
         next();
       }
     })

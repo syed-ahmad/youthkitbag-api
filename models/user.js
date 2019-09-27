@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
@@ -33,7 +33,7 @@ const userSchema = new Schema(
       location: {
         type: {
           type: String, // Don't do `{ location: { type: String } }`
-          enum: ["Point"] // 'location.type' must be 'Point'
+          enum: ['Point'] // 'location.type' must be 'Point'
         },
         coordinates: {
           type: [Number]
@@ -42,7 +42,7 @@ const userSchema = new Schema(
       groups: [
         {
           type: Schema.Types.ObjectId,
-          ref: "Group"
+          ref: 'Group'
         }
       ],
       images: [
@@ -59,8 +59,8 @@ const userSchema = new Schema(
       badges: [String]
     },
     package: {
-      name: { type: String, default: "free" },
-      icon: { type: String, default: "coffee" },
+      name: { type: String, default: 'free' },
+      icon: { type: String, default: 'coffee' },
       max: {
         kit: { type: Number, default: 20 },
         trade: { type: Number, default: 5 },
@@ -86,4 +86,4 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);

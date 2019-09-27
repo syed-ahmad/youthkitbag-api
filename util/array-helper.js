@@ -1,6 +1,6 @@
 if (!Array.prototype.clean) {
   Array.prototype.clean = function(toLower) {
-    "use strict";
+    'use strict';
 
     if (!this) return [];
 
@@ -8,9 +8,9 @@ if (!Array.prototype.clean) {
       ? this.map(s =>
           s
             .trim()
-            .replace(/ +/g, "-")
+            .replace(/ +/g, '-')
             .toLowerCase()
         )
-      : this.map(s => s.trim().replace(/ +/g, "-"));
+      : this.map(s => s.trim().replace(/ +/g, '-'));
   };
 }

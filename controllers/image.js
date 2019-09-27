@@ -1,17 +1,17 @@
-const aws = require("aws-sdk");
-const awsHelper = require("../util/aws-helper");
-const Photo = require("../models/photo");
-const User = require("../models/user");
+const aws = require('aws-sdk');
+const awsHelper = require('../util/aws-helper');
+const Photo = require('../models/photo');
+const User = require('../models/user');
 
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET;
 
 aws.config.update({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  region: "eu-west-2"
+  region: 'eu-west-2'
 });
 
-const s3 = new aws.S3({ signatureVersion: "s3v4" });
+const s3 = new aws.S3({ signatureVersion: 's3v4' });
 
 exports.getSignS3 = (req, res, next) => {
   const fileName = req.query.filename;
@@ -22,10 +22,10 @@ exports.getSignS3 = (req, res, next) => {
     Key: fileName,
     Expires: 60,
     ContentType: fileType,
-    ACL: "public-read"
+    ACL: 'public-read'
   };
 
-  s3.getSignedUrl("putObject", s3Params, (err, data) => {
+  s3.getSignedUrl('putObject', s3Params, (err, data) => {
     if (err) {
       return res.end();
     }
@@ -52,7 +52,7 @@ exports.add = (req, res, next) => {
       if (reachedLimit) {
         awsHelper.deleteImage(image.key);
         const error = new Error(
-          "You have reached the limit of the number of photos you can upload for your membership level"
+          'You have reached the limit of the number of photos you can upload for your membership level'
         );
         error.statusCode = 500;
         throw error;
@@ -61,7 +61,7 @@ exports.add = (req, res, next) => {
       // Multer will catch scenario where photo property exists and no photo added, throwing a "Boundary not found" error
       // but this check is being kept in case a different package is added that does not handle the situation
       if (!image) {
-        const error = new Error("No photo added to request");
+        const error = new Error('No photo added to request');
         error.statusCode = 500;
         throw error;
       }

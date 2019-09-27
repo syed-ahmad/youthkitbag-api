@@ -1,14 +1,14 @@
-const ObjectId = require("mongoose").Types.ObjectId;
-const Kit = require("../models/kit");
-const Trade = require("../models/trade");
-const User = require("../models/user");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Kit = require('../models/kit');
+const Trade = require('../models/trade');
+const User = require('../models/user');
 
 const filterOptions = [
-  { key: "all", value: "All" },
-  { key: "title", value: "Title" },
-  { key: "activity", value: "Activity" },
-  { key: "group", value: "Group" },
-  { key: "traded", value: "All Traded" }
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'group', value: 'Group' },
+  { key: 'traded', value: 'All Traded' }
 ];
 
 // GET request to return kit item as item for trade
@@ -21,7 +21,7 @@ exports.getAdd = (req, res, next) => {
     .then(currentTrade => {
       if (currentTrade && !currentTrade.traded) {
         const error = new Error(
-          "The requested item of kit is already listed for trade"
+          'The requested item of kit is already listed for trade'
         );
         error.statusCode = 500;
         throw error;
@@ -29,9 +29,9 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      if (kit.status !== "owned") {
+      if (kit.status !== 'owned') {
         const error = new Error(
-          "Item in kitbag does not have status of Owned, and therefore cannot be listed for trade"
+          'Item in kitbag does not have status of Owned, and therefore cannot be listed for trade'
         );
         error.statusCode = 500;
         throw error;
@@ -45,14 +45,14 @@ exports.getAdd = (req, res, next) => {
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
         condition:
-          sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : "used",
+          sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
         askingPrice: 0.0,
         location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
         groups: user.groups
           ? user.groups.map(g => {
-              g.groupId, g.name, "2019-01-01";
+              g.groupId, g.name, '2019-01-01';
             })
           : [],
         tradeDetails: [],
@@ -84,9 +84,9 @@ exports.add = (req, res, next) => {
     sourceId
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
   let origImages = req.body.origImages;
 
@@ -118,7 +118,7 @@ exports.add = (req, res, next) => {
       .then(existingTrade => {
         if (existingTrade) {
           const error = new Error(
-            "The requested item of kit is already listed for trade"
+            'The requested item of kit is already listed for trade'
           );
           error.statusCode = 500;
           throw error;
@@ -126,14 +126,14 @@ exports.add = (req, res, next) => {
         return Kit.findById(sourceId);
       })
       .then(kit => {
-        if (kit.status !== "owned") {
+        if (kit.status !== 'owned') {
           const error = new Error(
-            "Item in kitbag does not have status of Owned, and therefore cannot be listed for trade"
+            'Item in kitbag does not have status of Owned, and therefore cannot be listed for trade'
           );
           error.statusCode = 500;
           throw error;
         }
-        kit.status = "trade";
+        kit.status = 'trade';
         return kit.save();
       })
       .then(() => {
@@ -146,12 +146,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.trade += 1;
-        res
-          .status(201)
-          .json({
-            message: `Trade item "${newTrade.title}" successfully created.`,
-            trade: newTrade
-          });
+        res.status(201).json({
+          message: `Trade item "${newTrade.title}" successfully created.`,
+          trade: newTrade
+        });
         return user.save();
       })
       .catch(err => {
@@ -169,12 +167,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.trade += 1;
-        res
-          .status(201)
-          .json({
-            message: `Item for trade "${newTrade.title}" successfully created.`,
-            trade: newTrade
-          });
+        res.status(201).json({
+          message: `Item for trade "${newTrade.title}" successfully created.`,
+          trade: newTrade
+        });
         return user.save();
       })
       .catch(err => {
@@ -218,9 +214,9 @@ exports.edit = (req, res, next) => {
     traded
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
 
   Trade.findById(tradeId)
@@ -239,12 +235,10 @@ exports.edit = (req, res, next) => {
       return trade.save();
     })
     .then(result => {
-      res
-        .status(201)
-        .json({
-          message: `Item for trade "${result.title}" successfully updated.`,
-          trade: result
-        });
+      res.status(201).json({
+        message: `Item for trade "${result.title}" successfully updated.`,
+        trade: result
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -262,28 +256,28 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, traded: by === "traded" };
+  let query = { userId: req.userId, traded: by === 'traded' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case "title": {
+      case 'title': {
         query = {
           userId: req.userId,
           traded: false,
-          title: { $regex: `.*${search}.*`, $options: "i" }
+          title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
-      case "activity": {
+      case 'activity': {
         query = { userId: req.userId, traded: false, activitys: search };
         break;
       }
-      case "group": {
+      case 'group': {
         query = { userId: req.userId, traded: true };
         break;
       }
-      case "traded": {
+      case 'traded': {
         query = { userId: req.userId, traded: true };
         break;
       }
@@ -294,7 +288,7 @@ exports.getItems = (req, res, next) => {
             { traded: false },
             {
               $or: [
-                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
                 { activitys: search }
               ]
             }
@@ -334,7 +328,7 @@ exports.getItems = (req, res, next) => {
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
           filterUrl:
-            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
@@ -357,7 +351,7 @@ exports.delete = (req, res, next) => {
     .then(trade => {
       if (trade.traded) {
         const error = new Error(
-          "You have already traded this item, so it cannot be deleted"
+          'You have already traded this item, so it cannot be deleted'
         );
         error.statusCode = 403;
         throw error;
@@ -381,30 +375,28 @@ exports.delete = (req, res, next) => {
         Kit.findById(sourceId).then(kit => {
           if (!kit) {
             const error = new Error(
-              "The requested item of kit could not be found"
+              'The requested item of kit could not be found'
             );
             error.statusCode = 404;
             throw error;
           }
           if (kit.userId.toString() !== req.userId.toString()) {
             const error = new Error(
-              "You are not authorized to take any action on this item of related kit"
+              'You are not authorized to take any action on this item of related kit'
             );
             error.statusCode = 403;
             throw error;
           }
-          kit.status = "owned";
+          kit.status = 'owned';
           return kit.save();
         });
       }
       return;
     })
     .then(() => {
-      res
-        .status(201)
-        .json({
-          message: `Item for trade "${tradeTitle}" successfully deleted.`
-        });
+      res.status(201).json({
+        message: `Item for trade "${tradeTitle}" successfully deleted.`
+      });
     })
     .catch(err => {
       if (!err.statusCode) {

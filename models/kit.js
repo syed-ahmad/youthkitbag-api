@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
@@ -16,7 +16,7 @@ const kitSchema = new Schema(
     },
     status: {
       type: String,
-      default: "owned"
+      default: 'owned'
     },
     security: [String],
     purchases: [
@@ -75,11 +75,11 @@ const kitSchema = new Schema(
     },
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true
     }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Kit", kitSchema);
+module.exports = mongoose.model('Kit', kitSchema);

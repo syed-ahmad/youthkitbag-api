@@ -1,22 +1,22 @@
-const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
-const sgMail = require("@sendgrid/mail");
-const User = require("../models/user");
-const jwt = require("jsonwebtoken");
-const { validationResult } = require("express-validator");
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const sgMail = require('@sendgrid/mail');
+const User = require('../models/user');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const DOMAIN_URL = process.env.DOMAIN_URL || "http://localhost:5000";
+const DOMAIN_URL = process.env.DOMAIN_URL || 'http://localhost:5000';
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const VALIDATION_FAILED = "Validation failed";
-const INVALID_CREDENTIALS = "You have entered an invalid email or password";
+const VALIDATION_FAILED = 'Validation failed';
+const INVALID_CREDENTIALS = 'You have entered an invalid email or password';
 const RESET_TOKEN_EXPIRED =
-  "The reset password token has expired. Please request a new reset password token.";
+  'The reset password token has expired. Please request a new reset password token.';
 const ACCOUNT_LOCKED =
-  "Your account has been locked out. Please reset your password.";
+  'Your account has been locked out. Please reset your password.';
 const PASSWORD_RESET =
-  "Your account password has been reset. Please not login using your new password.";
+  'Your account password has been reset. Please not login using your new password.';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
@@ -42,12 +42,12 @@ exports.signup = (req, res, next) => {
       return user.save();
     })
     .then(result => {
-      res.status(201).json({ message: "User was created", userId: result._id });
+      res.status(201).json({ message: 'User was created', userId: result._id });
       const msg = {
         to: email,
-        from: "admin@youthkitbag.com",
-        subject: "YouthKitbag Signup Successful",
-        text: "Thank you for signing up to this service"
+        from: 'admin@youthkitbag.com',
+        subject: 'YouthKitbag Signup Successful',
+        text: 'Thank you for signing up to this service'
       };
       return sgMail.send(msg);
     })
@@ -115,7 +115,7 @@ exports.login = (req, res, next) => {
           userId: loadedUser._id.toString()
         },
         JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: '1h' }
       );
       res.status(200).json({ token: token, userId: loadedUser._id.toString() });
     })
@@ -143,7 +143,7 @@ exports.reset = (req, res, next) => {
       err.statusCode = 500;
       throw err;
     }
-    const token = buffer.toString("hex");
+    const token = buffer.toString('hex');
     User.findOne({ email: email })
       .then(user => {
         if (!user) {
@@ -158,16 +158,14 @@ exports.reset = (req, res, next) => {
         return user.save();
       })
       .then(result => {
-        res
-          .status(200)
-          .json({
-            message: "Password reset requested (token shown for testing)",
-            token: token
-          });
+        res.status(200).json({
+          message: 'Password reset requested (token shown for testing)',
+          token: token
+        });
         const msg = {
           to: email,
-          from: "admin@youthkitbag.com",
-          subject: "YouthKitbag Reset Password",
+          from: 'admin@youthkitbag.com',
+          subject: 'YouthKitbag Reset Password',
           text: `
             <p>You requested a password reset</p>
             <p>Click this <a href="${DOMAIN_URL}/reset/${token}">link</a> to set a new password</p>

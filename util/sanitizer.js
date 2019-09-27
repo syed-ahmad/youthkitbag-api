@@ -9,15 +9,15 @@ exports.commaToArray = value => {
     return value.filter(item => item.trim().length > 0);
   }
 
-  return value.split(",").filter(item => item.trim().length > 0);
+  return value.split(',').filter(item => item.trim().length > 0);
 };
 
-exports.caseTagFormat = value => value.trim().replace(/ +/g, "-");
+exports.caseTagFormat = value => value.trim().replace(/ +/g, '-');
 
 exports.lowTagFormat = value =>
   value
     .trim()
-    .replace(/ +/g, "-")
+    .replace(/ +/g, '-')
     .toLowerCase();
 
 exports.lower = value => value.toLowerCase();

@@ -1,4 +1,4 @@
-const Trade = require("../models/trade");
+const Trade = require('../models/trade');
 
 module.exports = (req, res, next) => {
   const tradeId = req.params.tradeId;
@@ -7,7 +7,7 @@ module.exports = (req, res, next) => {
   Trade.findOne(query)
     .then(trade => {
       if (!trade) {
-        const error = new Error("The requested trade item could not be found");
+        const error = new Error('The requested trade item could not be found');
         error.statusCode = 404;
         throw error;
       }

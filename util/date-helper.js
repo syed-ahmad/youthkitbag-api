@@ -1,22 +1,22 @@
 if (!Array.prototype.fixDateTime) {
   String.prototype.fixDateTime = function() {
-    "use strict";
-    const noDate = "";
+    'use strict';
+    const noDate = '';
 
     if (!this) return noDate;
 
-    if (this.startsWith("-")) return noDate;
+    if (this.startsWith('-')) return noDate;
 
-    const dateTime = this.split("T");
-    const date = dateTime[0].split("-");
+    const dateTime = this.split('T');
+    const date = dateTime[0].split('-');
 
     if (
       !date[0] ||
       !date[1] ||
       !date[2] ||
-      date[0] === "0" ||
-      date[1] === "0" ||
-      date[2] === "0"
+      date[0] === '0' ||
+      date[1] === '0' ||
+      date[2] === '0'
     )
       return noDate;
 
@@ -26,7 +26,7 @@ if (!Array.prototype.fixDateTime) {
   };
 
   function padZero(value, size) {
-    const s = "00000" + value;
+    const s = '00000' + value;
     return s.substr(s.length - size);
   }
 

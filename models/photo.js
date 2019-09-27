@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
@@ -20,11 +20,11 @@ const photoSchema = new Schema(
     },
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true
     }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Photo", photoSchema);
+module.exports = mongoose.model('Photo', photoSchema);

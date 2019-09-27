@@ -1,4 +1,4 @@
-const { validationResult } = require("express-validator");
+const { validationResult } = require('express-validator');
 
 module.exports = (req, res, next) => {
   const validation = validationResult(req);
@@ -15,7 +15,7 @@ module.exports = (req, res, next) => {
 
       return res.status(422).json({
         message:
-          "Errors have been identified. Please correct them before continuing",
+          'Errors have been identified. Please correct them before continuing',
         errors: fieldErrors
       });
     }

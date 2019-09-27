@@ -1,4 +1,4 @@
-const Wanted = require("../models/wanted");
+const Wanted = require('../models/wanted');
 
 module.exports = (req, res, next) => {
   const wantedId = req.params.wantedId;
@@ -7,7 +7,7 @@ module.exports = (req, res, next) => {
   Wanted.findOne(query)
     .then(wanted => {
       if (!wanted) {
-        const error = new Error("The requested wanted item could not be found");
+        const error = new Error('The requested wanted item could not be found');
         error.statusCode = 404;
         throw error;
       }

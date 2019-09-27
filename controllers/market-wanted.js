@@ -1,10 +1,10 @@
-const Wanted = require("../models/wanted");
+const Wanted = require('../models/wanted');
 
 const filterOptions = [
-  { key: "all", value: "All" },
-  { key: "title", value: "Title" },
-  { key: "activity", value: "Activity" },
-  { key: "obtained", value: "All Recovered" }
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'obtained', value: 'All Recovered' }
 ];
 
 // GET request a wanted item
@@ -14,7 +14,7 @@ exports.getItem = (req, res, next) => {
   Wanted.findById(wantedId)
     .then(wanted => {
       if (!wanted) {
-        const error = new Error("The requested wanted item could not be found");
+        const error = new Error('The requested wanted item could not be found');
         error.statusCode = 500;
         throw error;
       }
@@ -44,27 +44,27 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { obtained: by === "obtained" };
+  let query = { obtained: by === 'obtained' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case "title": {
+      case 'title': {
         query = {
           obtained: false,
-          title: { $regex: `.*${search}.*`, $options: "i" }
+          title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
-      case "activity": {
+      case 'activity': {
         query = { obtained: false, activitys: search };
         break;
       }
-      case "group": {
+      case 'group': {
         query = { userId: req.userId, traded: true };
         break;
       }
-      case "obtained": {
+      case 'obtained': {
         query = { obtained: true };
         break;
       }
@@ -74,7 +74,7 @@ exports.getItems = (req, res, next) => {
             { obtained: false },
             {
               $or: [
-                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
                 { activitys: search }
               ]
             }
@@ -123,7 +123,7 @@ exports.getItems = (req, res, next) => {
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
           filterUrl:
-            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })

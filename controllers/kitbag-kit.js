@@ -1,15 +1,15 @@
-const Kit = require("../models/kit");
-const User = require("../models/user");
-const awsHelper = require("../util/aws-helper");
-require("../util/date-helper");
+const Kit = require('../models/kit');
+const User = require('../models/user');
+const awsHelper = require('../util/aws-helper');
+require('../util/date-helper');
 
 const filterOptions = [
-  { key: "all", value: "All" },
-  { key: "title", value: "Title" },
-  { key: "activity", value: "Activity" },
-  { key: "tag", value: "Tag" },
-  { key: "container", value: "Container" },
-  { key: "inactive", value: "All Inactive" }
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'tag', value: 'Tag' },
+  { key: 'container', value: 'Container' },
+  { key: 'inactive', value: 'All Inactive' }
 ];
 
 // POST request to add a new item into kitbag
@@ -28,11 +28,11 @@ exports.add = (req, res, next) => {
     active
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
-  const imagesToDelete = req.body.images.filter(i => i.state === "D");
+  const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   const kit = new Kit({
     title: title,
@@ -64,12 +64,10 @@ exports.add = (req, res, next) => {
     })
     .then(user => {
       user.package.size.kit += 1;
-      res
-        .status(201)
-        .json({
-          message: `Item of kit "${newKit.title}" successfully created.`,
-          kit: newKit
-        });
+      res.status(201).json({
+        message: `Item of kit "${newKit.title}" successfully created.`,
+        kit: newKit
+      });
       return user.save();
     })
     .catch(err => {
@@ -113,12 +111,12 @@ exports.edit = (req, res, next) => {
     active
   } = req.body;
 
-  const activeImages = req.body.images.filter(i => i.state !== "D");
+  const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return { ...i, state: "A" };
+    return { ...i, state: 'A' };
   });
 
-  const imagesToDelete = req.body.images.filter(i => i.state === "D");
+  const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   imagesToDelete.forEach(i => {
     awsHelper.deleteImage(i.image);
@@ -140,12 +138,10 @@ exports.edit = (req, res, next) => {
       return kit.save();
     })
     .then(result => {
-      res
-        .status(201)
-        .json({
-          message: `Item of kit "${result.title}" successfully updated.`,
-          kit: result
-        });
+      res.status(201).json({
+        message: `Item of kit "${result.title}" successfully updated.`,
+        kit: result
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -163,41 +159,41 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, active: by !== "inactive" };
+  let query = { userId: req.userId, active: by !== 'inactive' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case "title": {
+      case 'title': {
         query = {
           userId: req.userId,
           active: true,
-          title: { $regex: `.*${search}.*`, $options: "i" }
+          title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
-      case "activity": {
+      case 'activity': {
         query = { userId: req.userId, active: true, activitys: search };
         break;
       }
-      case "tag": {
+      case 'tag': {
         query = { userId: req.userId, active: true, tags: search };
         break;
       }
-      case "container": {
+      case 'container': {
         query = {
           userId: req.userId,
           active: true,
           inbag: {
             $elemMatch: {
-              location: { $regex: `.*${search}.*`, $options: "i" },
+              location: { $regex: `.*${search}.*`, $options: 'i' },
               quantity: { $gt: 0 }
             }
           }
         };
         break;
       }
-      case "inactive": {
+      case 'inactive': {
         query = { userId: req.userId, active: false };
         break;
       }
@@ -208,7 +204,7 @@ exports.getItems = (req, res, next) => {
             { active: true },
             {
               $or: [
-                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
                 { activitys: search },
                 { tags: search }
               ]
@@ -232,7 +228,7 @@ exports.getItems = (req, res, next) => {
         .limit(itemsPerPage);
     })
     .then(kits => {
-      if (by === "container") {
+      if (by === 'container') {
         var newKits = [];
         kits.forEach(function(k) {
           newKits.push({
@@ -264,7 +260,7 @@ exports.getItems = (req, res, next) => {
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
           filterUrl:
-            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
@@ -299,11 +295,9 @@ exports.delete = (req, res, next) => {
           return user.save();
         })
         .then(() => {
-          res
-            .status(201)
-            .json({
-              message: `Item of kit "${kitTitle}" successfully deleted.`
-            });
+          res.status(201).json({
+            message: `Item of kit "${kitTitle}" successfully deleted.`
+          });
         });
     })
     .catch(err => {
@@ -316,7 +310,7 @@ exports.delete = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getContainers = (req, res, next) => {
-  let query = { userId: req.userId, active: true, tags: "container" };
+  let query = { userId: req.userId, active: true, tags: 'container' };
   let orderby = { title: 1 };
 
   Kit.find(query)
