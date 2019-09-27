@@ -3,108 +3,115 @@ const pointSchema = require('./point');
 
 const Schema = mongoose.Schema;
 
-const stolenSchema = new Schema({
-  title: {
-    type: String,
-    required: true
-  },
-  subtitle: {
-    type: String
-  },
-  description: {
-    type: String
-  },
-  location: {
-    type: {
+const stolenSchema = new Schema(
+  {
+    title: {
       type: String,
-      enum: ['Point']
+      required: true
     },
-    coordinates: {
-      type: [Number]
-    }
-  },
-  images: [
-    {
-      image: {
-        type: String
-      },
-      imageUrl: {
-        type: String
-      }  
-    }  
-  ],
-  activitys: [String],
-  security: [String],
-  stolenOn: {
-    type: Date
-  },
-  tracking: {
-    type: String
-  },
-  recovered: {
-    type: Boolean
-  },
-  sourceId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Kit'
-  },
-  userId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  groups: [
-    {
-      groupId:  {
-        type: Schema.Types.ObjectId,
-        ref: 'Group'
-      },
-      name: {
-        type: String
-      },
-      available: {
-        type: Date
-      }
-    }
-  ],
-  reportDetails: [{
-    reportedOn: {
-      type: Date
-    },
-    fromUserId:  {
-      type: Schema.Types.ObjectId,
-      ref: 'User'
-    },
-    details: {
+    subtitle: {
       type: String
     },
-    accepted: {
-      type: Boolean
+    description: {
+      type: String
     },
-    legit: {
-      type: Boolean
-    },
-    messages: [{
-      toOwner: {
-        type: Boolean
+    location: {
+      type: {
+        type: String,
+        enum: ['Point']
       },
-      sentDate: {
-        type: Date
-      },
-      title: {
-        type: String
-      },
-      body: {
-        type: String
-      },
-      draft: {
-        type: Boolean
-      },
-      read: {
-        type: Boolean
+      coordinates: {
+        type: [Number]
       }
-    }]
-  }]
-}, { timestamps: true });
+    },
+    images: [
+      {
+        image: {
+          type: String
+        },
+        imageUrl: {
+          type: String
+        }
+      }
+    ],
+    activitys: [String],
+    security: [String],
+    stolenOn: {
+      type: Date
+    },
+    tracking: {
+      type: String
+    },
+    recovered: {
+      type: Boolean
+    },
+    sourceId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Kit'
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    groups: [
+      {
+        groupId: {
+          type: Schema.Types.ObjectId,
+          ref: 'Group'
+        },
+        name: {
+          type: String
+        },
+        available: {
+          type: Date
+        }
+      }
+    ],
+    reportDetails: [
+      {
+        reportedOn: {
+          type: Date
+        },
+        fromUserId: {
+          type: Schema.Types.ObjectId,
+          ref: 'User'
+        },
+        details: {
+          type: String
+        },
+        accepted: {
+          type: Boolean
+        },
+        legit: {
+          type: Boolean
+        },
+        messages: [
+          {
+            toOwner: {
+              type: Boolean
+            },
+            sentDate: {
+              type: Date
+            },
+            title: {
+              type: String
+            },
+            body: {
+              type: String
+            },
+            draft: {
+              type: Boolean
+            },
+            read: {
+              type: Boolean
+            }
+          }
+        ]
+      }
+    ]
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model('Stolen', stolenSchema);

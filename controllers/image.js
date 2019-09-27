@@ -11,7 +11,7 @@ aws.config.update({
   region: 'eu-west-2'
 });
 
-const s3 = new aws.S3({signatureVersion: 's3v4'});
+const s3 = new aws.S3({ signatureVersion: 's3v4' });
 
 exports.getSignS3 = (req, res, next) => {
   const fileName = req.query.filename;
@@ -26,7 +26,7 @@ exports.getSignS3 = (req, res, next) => {
   };
 
   s3.getSignedUrl('putObject', s3Params, (err, data) => {
-    if(err){
+    if (err) {
       return res.end();
     }
     const returnData = {
@@ -42,21 +42,21 @@ exports.postStore = (req, res, next) => {
 };
 
 exports.add = (req, res, next) => {
-
   let image = req.file;
 
-  User
-    .findById(req.userId)
-    .then (user => { 
+  User.findById(req.userId)
+    .then(user => {
       return user.package.max.photos <= user.package.size.photos;
     })
-    .then (reachedLimit => {
+    .then(reachedLimit => {
       if (reachedLimit) {
-        awsHelper.deleteImage(image.key)
-        const error = new Error('You have reached the limit of the number of photos you can upload for your membership level');
+        awsHelper.deleteImage(image.key);
+        const error = new Error(
+          'You have reached the limit of the number of photos you can upload for your membership level'
+        );
         error.statusCode = 500;
         throw error;
-      };
+      }
 
       // Multer will catch scenario where photo property exists and no photo added, throwing a "Boundary not found" error
       // but this check is being kept in case a different package is added that does not handle the situation
@@ -72,13 +72,12 @@ exports.add = (req, res, next) => {
         imageUrl: image.location,
         userId: req.userId
       });
-      
+
       return photo.save();
     })
     .then(result => {
-      User
-        .findById(req.userId)
-        .then (user => { 
+      User.findById(req.userId)
+        .then(user => {
           user.package.size.photos += 1;
           return user.save();
         })

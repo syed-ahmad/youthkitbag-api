@@ -25,16 +25,20 @@ const s3 = new aws.S3();
 const s3Storage = multerS3({
   s3: s3,
   bucket: process.env.AWS_S3_BUCKET,
-  metadata: function (req, file, cb) {
+  metadata: function(req, file, cb) {
     cb(null, { fieldName: file.fieldname });
   },
-  key: function (req, file, cb) {
+  key: function(req, file, cb) {
     cb(null, 'ykb-' + uuidv4() + '-' + file.originalname);
   }
 });
 
 const imagesFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+  if (
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg'
+  ) {
     cb(null, true);
   } else {
     cb(null, false);
@@ -45,17 +49,27 @@ app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-app.use(multer({ storage: s3Storage, limits: { fileSize: 512000 }, fileFilter: imagesFilter }).single('photo'));
+app.use(
+  multer({
+    storage: s3Storage,
+    limits: { fileSize: 512000 },
+    fileFilter: imagesFilter
+  }).single('photo')
+);
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, PATCH, DELETE'
+  );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS;
-if (!allowedOrigins) console.error('Missing ALLOWED_ORIGINS environment variable');
+if (!allowedOrigins)
+  console.error('Missing ALLOWED_ORIGINS environment variable');
 
 const corsOptions = {
   origin: allowedOrigins.split(','),
@@ -77,7 +91,7 @@ mongoose
   .then(result => {
     app.listen(PORT, () => {
       console.log('listening on port', PORT);
-    })
+    });
   })
   .catch(err => {
     console.log(err);

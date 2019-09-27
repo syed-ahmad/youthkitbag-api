@@ -5,11 +5,12 @@ const User = require('../models/user');
 // purchasing package options (or app admin users) can increase the number of groups that a user can be member of
 
 module.exports = (req, res, next) => {
-  User
-    .findById(req.userId)
-    .then (user => {
+  User.findById(req.userId)
+    .then(user => {
       if (user.package.size.groups >= user.package.max.groups) {
-        const error = new Error('You have already reached the limit of groups that you can be a member of. Please upgrade your account.');
+        const error = new Error(
+          'You have already reached the limit of groups that you can be a member of. Please upgrade your account.'
+        );
         error.statusCode = 404;
         throw error;
       }
@@ -21,4 +22,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

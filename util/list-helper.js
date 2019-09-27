@@ -10,4 +10,4 @@ exports.getPagination = (totalItems, itemsPerPage, page, by, search) => {
     lastPage: Math.ceil(totalItems / itemsPerPage),
     filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
   };
-}
+};

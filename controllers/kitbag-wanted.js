@@ -1,9 +1,15 @@
-const ObjectId = require('mongoose').Types.ObjectId; 
+const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Wanted = require('../models/wanted');
 const User = require('../models/user');
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'obtained', value: 'All Recovered' } ];
+const filterOptions = [
+  { key: 'all', value: 'All' },
+  { key: 'title', value: 'Title' },
+  { key: 'activity', value: 'Activity' },
+  { key: 'group', value: 'Group' },
+  { key: 'obtained', value: 'All Recovered' }
+];
 
 // GET request to return kit item as item for wanted
 exports.getAdd = (req, res, next) => {
@@ -14,7 +20,9 @@ exports.getAdd = (req, res, next) => {
   Wanted.findOne({ sourceId: new ObjectId(kitId) })
     .then(currentWanted => {
       if (currentWanted && !currentWanted.obtained) {
-        const error = new Error('The requested item of kit is already actively listed as wanted');
+        const error = new Error(
+          'The requested item of kit is already actively listed as wanted'
+        );
         error.statusCode = 500;
         throw error;
       }
@@ -24,16 +32,20 @@ exports.getAdd = (req, res, next) => {
       sourceKit = kit;
       return User.findById(req.userId);
     })
-    .then (user => { 
+    .then(user => {
       res.status(200).json({
         title: sourceKit.title,
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
-        offerPrice: 0.00,
-        location: {}, 
+        offerPrice: 0.0,
+        location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
-        groups: user.groups ? user.groups.map(g => { g.groupId, g.name, '2019-01-01'}) : [],
+        groups: user.groups
+          ? user.groups.map(g => {
+              g.groupId, g.name, '2019-01-01';
+            })
+          : [],
         offerDetails: [],
         obtained: false,
         sourceId: sourceKit._id,
@@ -50,11 +62,21 @@ exports.getAdd = (req, res, next) => {
 
 // POST request to add a new item into wanted
 exports.add = (req, res, next) => {
-  const { title, subtitle, description, offerPrice, location, activitys, groups, obtained, sourceId } = req.body;
+  const {
+    title,
+    subtitle,
+    description,
+    offerPrice,
+    location,
+    activitys,
+    groups,
+    obtained,
+    sourceId
+  } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return {...i, state: 'A'}
+    return { ...i, state: 'A' };
   });
   let origImages = req.body.origImages;
 
@@ -64,7 +86,12 @@ exports.add = (req, res, next) => {
     description: description,
     offerPrice: offerPrice,
     location: location,
-    images: images && images.length > 0 ? images : origImages ? JSON.parse(origImages) : [],
+    images:
+      images && images.length > 0
+        ? images
+        : origImages
+        ? JSON.parse(origImages)
+        : [],
     activitys: activitys,
     groups: groups,
     offerDetails: [],
@@ -76,11 +103,12 @@ exports.add = (req, res, next) => {
   let newWanted;
 
   if (sourceId) {
-    Wanted
-      .findOne({ sourceId: new ObjectId(sourceId) })
+    Wanted.findOne({ sourceId: new ObjectId(sourceId) })
       .then(currentWanted => {
         if (currentWanted && !currentWanted.obtained) {
-          const error = new Error('The requested item of kit is already actively listed as wanted');
+          const error = new Error(
+            'The requested item of kit is already actively listed as wanted'
+          );
           error.statusCode = 500;
           throw error;
         }
@@ -93,7 +121,10 @@ exports.add = (req, res, next) => {
       })
       .then(user => {
         user.package.size.wanted += 1;
-        res.status(201).json({ message: `Wanted item "${newWanted.title}" successfully created.`, wanted: newWanted });
+        res.status(201).json({
+          message: `Wanted item "${newWanted.title}" successfully created.`,
+          wanted: newWanted
+        });
         return user.save();
       })
       .catch(err => {
@@ -101,34 +132,36 @@ exports.add = (req, res, next) => {
           err.statusCode = 500;
         }
         next(err);
-      });    
-    } else {
-      wanted
-        .save()
-        .then(result => {
-          newWanted = result;
-          return User.findById(req.userId);
-        })
-        .then(user => {
-          user.package.size.wanted += 1;
-          res.status(201).json({ message: `Wanted item "${newWanted.title}" successfully created.`, wanted: newWanted });
-          return user.save();
-        })
-        .catch(err => {
-          if (!err.statusCode) {
-            err.statusCode = 500;
-          }
-          next(err);
+      });
+  } else {
+    wanted
+      .save()
+      .then(result => {
+        newWanted = result;
+        return User.findById(req.userId);
+      })
+      .then(user => {
+        user.package.size.wanted += 1;
+        res.status(201).json({
+          message: `Wanted item "${newWanted.title}" successfully created.`,
+          wanted: newWanted
         });
-    }
+        return user.save();
+      })
+      .catch(err => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+  }
 };
 
 // GET request to get an already existing wanted item
 exports.getItem = (req, res, next) => {
   const wantedId = req.params.wantedId;
 
-  Wanted
-    .findById(wantedId)
+  Wanted.findById(wantedId)
     .then(wanted => {
       res.status(200).json(wanted);
     })
@@ -143,11 +176,21 @@ exports.getItem = (req, res, next) => {
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
   const wantedId = req.params.wantedId;
-  const { title, subtitle, description, offerPrice, location, activitys, groups, offerDetails, obtained } = req.body;
+  const {
+    title,
+    subtitle,
+    description,
+    offerPrice,
+    location,
+    activitys,
+    groups,
+    offerDetails,
+    obtained
+  } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
-    return {...i, state: 'A'}
+    return { ...i, state: 'A' };
   });
 
   Wanted.findById(wantedId)
@@ -162,10 +205,13 @@ exports.edit = (req, res, next) => {
       wanted.groups = groups;
       wanted.offerDetails = offerDetails;
       wanted.obtained = obtained;
-      return wanted.save()
+      return wanted.save();
     })
     .then(result => {
-      res.status(201).json({ message: `Wanted item "${result.title}" successfully updated.`, wanted: result });
+      res.status(201).json({
+        message: `Wanted item "${result.title}" successfully updated.`,
+        wanted: result
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -183,13 +229,17 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, obtained: (by === 'obtained') };
+  let query = { userId: req.userId, obtained: by === 'obtained' };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = { userId: req.userId, obtained: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+        query = {
+          userId: req.userId,
+          obtained: false,
+          title: { $regex: `.*${search}.*`, $options: 'i' }
+        };
         break;
       }
       case 'activity': {
@@ -205,7 +255,18 @@ exports.getItems = (req, res, next) => {
         break;
       }
       default: {
-        query = { $and: [ { userId: req.userId }, { obtained: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = {
+          $and: [
+            { userId: req.userId },
+            { obtained: false },
+            {
+              $or: [
+                { title: { $regex: `.*${search}.*`, $options: 'i' } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
     }
@@ -213,8 +274,7 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Wanted
-    .find(query)
+  Wanted.find(query)
     .countDocuments()
     .then(numberOfItems => {
       totalItems = numberOfItems;
@@ -240,7 +300,8 @@ exports.getItems = (req, res, next) => {
           nextPage: page + 1,
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
-          filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
+          filterUrl:
+            (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
       });
     })
@@ -274,7 +335,9 @@ exports.delete = (req, res, next) => {
       return user.save();
     })
     .then(() => {
-      res.status(201).json({ message: `Wanted item "${wantedTitle}" successfully deleted.` });
+      res.status(201).json({
+        message: `Wanted item "${wantedTitle}" successfully deleted.`
+      });
     })
     .catch(err => {
       if (!err.statusCode) {

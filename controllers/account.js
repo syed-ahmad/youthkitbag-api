@@ -1,9 +1,8 @@
 const User = require('../models/user');
-const { validationResult} = require('express-validator');
+const { validationResult } = require('express-validator');
 
 exports.getProfile = (req, res, next) => {
-  User
-    .findById(req.userId)
+  User.findById(req.userId)
     .then(user => {
       if (!user) {
         const error = new Error('User not found');
@@ -24,11 +23,9 @@ exports.getProfile = (req, res, next) => {
 };
 
 exports.postProfile = (req, res, next) => {
-
   const { username, activitys, groups } = req.body;
 
-  User
-    .findById(req.userIdÓ)
+  User.findById(req.userIdÓ)
     .then(user => {
       if (!user) {
         const error = new Error('User not found');
@@ -42,7 +39,7 @@ exports.postProfile = (req, res, next) => {
         activitys: activitys,
         groups: groups
       };
-      return user.save()
+      return user.save();
     })
     .then(result => {
       res.status(200).json({ user: result });

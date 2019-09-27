@@ -2,7 +2,7 @@ const Trade = require('../models/trade');
 
 module.exports = (req, res, next) => {
   const tradeId = req.params.tradeId;
-  const query = { '_id': tradeId, 'userId': req.userId };
+  const query = { _id: tradeId, userId: req.userId };
 
   Trade.findOne(query)
     .then(trade => {
@@ -19,4 +19,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

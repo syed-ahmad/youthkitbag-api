@@ -7,4 +7,4 @@ module.exports = (req, res, next) => {
 
   req.appAdmin = true;
   next();
-}
+};

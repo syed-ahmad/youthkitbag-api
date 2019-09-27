@@ -11,12 +11,13 @@ exports.createMessage = (req, res, next) => {
     error.httpStatusCode = 500;
     return next(error);
   }
-  
+
   if (sourceType === 'trade') {
-    Trade.findById(sourceId)
-    .then(trade => {
+    Trade.findById(sourceId).then(trade => {
       if (!trade) {
-        const error = new Error('The requested item for trade could not be found');
+        const error = new Error(
+          'The requested item for trade could not be found'
+        );
         error.statusCode = 500;
         throw error;
       }
@@ -41,8 +42,6 @@ exports.createMessage = (req, res, next) => {
   } else {
     const error = new Error('No message can be created');
     error.httpStatusCode = 500;
-    return next(error);  
+    return next(error);
   }
 };
-
-

@@ -1,15 +1,15 @@
 const Group = require('../models/group');
 
 module.exports = (req, res, next) => {
-  req.appAdmin = (req.userId.toString() === process.env.ADMIN_USER);
+  req.appAdmin = req.userId.toString() === process.env.ADMIN_USER;
   req.groupAdmin = false;
   req.groupMember = false;
 
   const groupId = req.params.groupId;
   const memberId = req.userId;
 
-  const query = { '_id': groupId };
-  const match = { 'members': { $elemMatch: { 'user': memberId} }};
+  const query = { _id: groupId };
+  const match = { members: { $elemMatch: { user: memberId } } };
 
   Group.findOne(query, match)
     .then(group => {
@@ -18,7 +18,10 @@ module.exports = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      if (group.members.length === 0 || group.members[0].permission.length === 0) {
+      if (
+        group.members.length === 0 ||
+        group.members[0].permission.length === 0
+      ) {
         next();
       } else {
         req.groupAdmin = group.members[0].permission.includes('admin');
@@ -32,4 +35,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

@@ -2,7 +2,7 @@ const Stolen = require('../models/stolen');
 
 module.exports = (req, res, next) => {
   const stolenId = req.params.stolenId;
-  const query = { '_id': stolenId, 'userId': req.userId };
+  const query = { _id: stolenId, userId: req.userId };
 
   Stolen.findOne(query)
     .then(stolen => {
@@ -19,4 +19,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

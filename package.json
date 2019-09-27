@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "format": "prettier \"**/*.js\" --write",
     "start": "node app.js",
     "dev": "node -r dotenv/config app.js",
     "watch": "nodemon -r dotenv/config app.js"
@@ -12,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@sendgrid/mail": "^6.4.0",
-    "aws-sdk": "^2.532.0",
+    "aws-sdk": "^2.536.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "dotenv": "^8.1.0",
-    "nodemon": "^1.19.2"
+    "nodemon": "^1.19.2",
+    "prettier": "^1.18.2"
   }
 }

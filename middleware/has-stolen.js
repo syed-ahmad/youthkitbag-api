@@ -5,11 +5,12 @@ const User = require('../models/user');
 // purchasing package options (or app admin users) can increase the number of kit items that a user can add
 
 module.exports = (req, res, next) => {
-  User
-    .findById(req.userId)
-    .then (user => {
+  User.findById(req.userId)
+    .then(user => {
       if (user.package.size.stolen >= user.package.max.stolen) {
-        const error = new Error('You have reached the limit of stolen items that you can report. Please upgrade your account.');
+        const error = new Error(
+          'You have reached the limit of stolen items that you can report. Please upgrade your account.'
+        );
         error.statusCode = 404;
         throw error;
       }
@@ -21,4 +22,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

@@ -9,7 +9,7 @@ exports.postBuyPackage = (req, res, next) => {
   const token = req.body.stripeToken;
   const packageName = req.params.packageName;
 
-  let totalPrice = packageName === 'premium' ? 60.00 : 24.00;
+  let totalPrice = packageName === 'premium' ? 60.0 : 24.0;
 
   const order = new Order({
     user: {
@@ -40,8 +40,9 @@ exports.postBuyPackage = (req, res, next) => {
     })
     .then(user => {
       user.package.name = packageName;
-      user.package.icon = packageName === 'premium' ? 'cocktail' : 'beer'; 
-      user.package.max = packageName === 'premium' ? premiumPackage : standardPackage;
+      user.package.icon = packageName === 'premium' ? 'cocktail' : 'beer';
+      user.package.max =
+        packageName === 'premium' ? premiumPackage : standardPackage;
       return user.save();
     })
     .then(user => {

@@ -5,6 +5,6 @@ exports.getPackage = (req, res, next) => {
     title: 'Package title',
     description: 'Package description',
     details: [],
-    price: 500.00
+    price: 500.0
   });
 };
