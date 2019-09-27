@@ -69,7 +69,7 @@ app.use((req, res, next) => {
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS;
 if (!allowedOrigins)
-  throw new Error('Missing ALLOWED_ORIGINS environment variable');
+  console.error('Missing ALLOWED_ORIGINS environment variable');
 
 const corsOptions = {
   origin: allowedOrigins.split(','),
