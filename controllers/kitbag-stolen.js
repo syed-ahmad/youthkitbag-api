@@ -212,6 +212,7 @@ exports.edit = (req, res, next) => {
     activitys,
     security,
     groups,
+    reportDetails,
     recovered
   } = req.body;
 

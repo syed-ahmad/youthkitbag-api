@@ -200,7 +200,7 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const tradeId = req.body.paramsId;
+  const tradeId = req.params.tradeId;
   const {
     title,
     subtitle,
