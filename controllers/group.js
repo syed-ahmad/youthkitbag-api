@@ -1,47 +1,68 @@
-const Group = require('../models/group');
-const User = require('../models/user');
-const { getPagination } = require('../util/list-helper');
+const Group = require("../models/group");
+const User = require("../models/user");
+const { getPagination } = require("../util/list-helper");
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'name', value: 'Name' }, { key: 'activity', value: 'Activity' } ];
+const filterOptions = [
+  { key: "all", value: "All" },
+  { key: "name", value: "Name" },
+  { key: "activity", value: "Activity" }
+];
 
 // POST request to add a new group for status
 exports.add = (req, res, next) => {
-  const { name, tagline, description, email, website, location, activitys } = req.body;
-  
+  const {
+    name,
+    tagline,
+    description,
+    email,
+    website,
+    location,
+    activitys
+  } = req.body;
+
   let images = [];
   let imagesToDelete = [];
   if (req.body.images) {
-    const approvedImages = req.body.images.filter(i => i.state !== 'D');
+    const approvedImages = req.body.images.filter(i => i.state !== "D");
     images = approvedImages.map(i => {
-      return {...i, state: 'A'}
-    });  
-    imagesToDelete = req.body.images.filter(i => i.state === 'D');
-  }  
+      return { ...i, state: "A" };
+    });
+    imagesToDelete = req.body.images.filter(i => i.state === "D");
+  }
   imagesToDelete.forEach(i => {
     awsHelper.deleteImage(i.image);
   });
 
-  let group = new Group({ name, tagline, description, email, website, location, images, activitys });
-  
-  group.status = 'requested';
+  let group = new Group({
+    name,
+    tagline,
+    description,
+    email,
+    website,
+    location,
+    images,
+    activitys
+  });
+
+  group.status = "requested";
   group.admin = req.userId;
   group.members = [];
 
   // add current user as first member
   const member = {
     user: req.userId,
-    state: 'approved',
+    state: "approved",
     stateAt: Date.now(),
-    permission: [ 'member', 'admin' ]
-  }
+    permission: ["member", "admin"]
+  };
   group.members.push(member);
-  
+
   let newGroup;
- 
-  Group.findOne({ tagline: `${tagline}`})
+
+  Group.findOne({ tagline: `${tagline}` })
     .then(existingGroup => {
       if (existingGroup) {
-        const error = new Error('A group already exists with this tagline.');
+        const error = new Error("A group already exists with this tagline.");
         error.statusCode = 404;
         throw error;
       }
@@ -57,7 +78,12 @@ exports.add = (req, res, next) => {
       user.package.size.groupadmins += 1;
       user.package.size.groups += 1;
       user.profile.groups.push(newGroup._id);
-      res.status(200).json({ message: `Group "${newGroup.name}" successfully created. Approval requested.`, group: newGroup });
+      res
+        .status(200)
+        .json({
+          message: `Group "${newGroup.name}" successfully created. Approval requested.`,
+          group: newGroup
+        });
       return user.save();
     })
     .catch(err => {
@@ -80,7 +106,11 @@ exports.editStatus = (req, res, next) => {
       return group.save();
     })
     .then(group => {
-      res.status(200).json({ message: `Status of group "${group.name}" successfully changed to "${status}".`});
+      res
+        .status(200)
+        .json({
+          message: `Status of group "${group.name}" successfully changed to "${status}".`
+        });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -94,37 +124,42 @@ exports.editStatus = (req, res, next) => {
 exports.editMemberState = (req, res, next) => {
   const { groupId, memberId, state } = req.params;
 
-  const validStates = [ 'approved', 'rejected', 'suspended' ];
+  const validStates = ["approved", "rejected", "suspended"];
   let updated = false;
 
   Group.findById(groupId)
     .then(group => {
       if (memberId === req.userId) {
-        const error = new Error('You are not authorised to change your own member state.');
+        const error = new Error(
+          "You are not authorised to change your own member state."
+        );
         error.statusCode = 404;
         throw error;
       }
       if (!validStates.includes(state)) {
-        const error = new Error('You have not specified a valid member state.');
+        const error = new Error("You have not specified a valid member state.");
         error.statusCode = 404;
         throw error;
       }
       const members = group.members.map(m => {
-        if (m.user.toString() !== memberId) return m
+        if (m.user.toString() !== memberId) return m;
         if (m.state !== state) {
           m.state = state;
           m.stateAt = Date.now();
-          m.permission = (state === 'suspended' || state === 'rejected') ? [] : ['member'];
+          m.permission =
+            state === "suspended" || state === "rejected" ? [] : ["member"];
           updated = true;
         }
         return m;
-      })
+      });
       group.members = members;
       return group.save();
     })
     .then(() => {
-      const updateMessage = updated ? `Member updated to state ${state}.` : `Member not updated as they already have state ${state}.`;
-      res.status(200).json({ message: updateMessage});
+      const updateMessage = updated
+        ? `Member updated to state ${state}.`
+        : `Member not updated as they already have state ${state}.`;
+      res.status(200).json({ message: updateMessage });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -141,10 +176,10 @@ exports.joinMember = (req, res, next) => {
   // add current user as first member
   const member = {
     user: req.userId,
-    state: 'requested',
+    state: "requested",
     stateAt: Date.now(),
     permission: []
-  }
+  };
 
   let groupName;
 
@@ -160,7 +195,11 @@ exports.joinMember = (req, res, next) => {
     .then(user => {
       user.package.size.groups += 1;
       user.profile.groups.push(groupId);
-      res.status(201).json({ message: `Your request to join group "${groupName}" has been submitted to the group administrator.` });
+      res
+        .status(201)
+        .json({
+          message: `Your request to join group "${groupName}" has been submitted to the group administrator.`
+        });
       return user.save();
     })
     .catch(err => {
@@ -175,25 +214,27 @@ exports.joinMember = (req, res, next) => {
 exports.leaveMember = (req, res, next) => {
   const groupId = req.params.groupId;
 
-  let updated = false; 
+  let updated = false;
 
   Group.findById(groupId)
     .then(group => {
       if (admin === req.userId) {
-        const error = new Error('You may not leave a group for which you are the key admin. You must transfer ownership first.');
+        const error = new Error(
+          "You may not leave a group for which you are the key admin. You must transfer ownership first."
+        );
         error.statusCode = 404;
         throw error;
       }
       const members = group.members.map(m => {
         if (m._id !== req.userId) return m;
-        if (m.state !== 'left') {
-          m.state = 'left';
+        if (m.state !== "left") {
+          m.state = "left";
           m.stateAt = Date.now();
           m.permission = [];
           updated = true;
         }
         return m;
-      })
+      });
       group.members = members;
       return group.save();
     })
@@ -205,9 +246,9 @@ exports.leaveMember = (req, res, next) => {
         user.profile.groups = user.profile.groups.filter(g => g !== groupId);
         user.package.size.groups += 1;
       }
-      const updateMessage = updated ?
-        `Your request to leave this group has been accepted.` : 
-        `Your request to leave this group could not be completed as you have already left the group.`;
+      const updateMessage = updated
+        ? `Your request to leave this group has been accepted.`
+        : `Your request to leave this group could not be completed as you have already left the group.`;
       res.status(201).json(updateMessage);
       return user.save();
     })
@@ -262,21 +303,31 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { };
+  let query = {};
 
   if (search || by) {
-    search = search ? search.toLowerCase() : '';
+    search = search ? search.toLowerCase() : "";
     switch (by) {
-      case 'name': {
-        query = { name: { $regex : `.*${search}.*`, $options: 'i' } };
+      case "name": {
+        query = { name: { $regex: `.*${search}.*`, $options: "i" } };
         break;
       }
-      case 'activity': {
+      case "activity": {
         query = { activitys: search };
         break;
       }
       default: {
-        query = { $and: [ { status: { $ne: 'blocked'} }, { $or: [{ name: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = {
+          $and: [
+            { status: { $ne: "blocked" } },
+            {
+              $or: [
+                { name: { $regex: `.*${search}.*`, $options: "i" } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
     }
@@ -284,8 +335,7 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Group
-    .find(query)
+  Group.find(query)
     .countDocuments()
     .then(numberOfItems => {
       totalItems = numberOfItems;
@@ -318,9 +368,8 @@ exports.getItems = (req, res, next) => {
 exports.getMembers = (req, res, next) => {
   const { groupId } = req.params;
 
-  Group
-    .findById(groupId)
-    .populate({ path: 'members.user' })
+  Group.findById(groupId)
+    .populate({ path: "members.user" })
     .then(group => {
       const groupMembers = mapMembers(group, req);
       res.status(200).json(groupMembers);
@@ -337,9 +386,8 @@ exports.getMembers = (req, res, next) => {
 exports.getItem = (req, res, next) => {
   const { groupId } = req.params;
 
-  Group
-    .findById(groupId)
-    .populate({ path: 'admin' })
+  Group.findById(groupId)
+    .populate({ path: "admin" })
     .then(group => {
       const groupItem = mapGroup(group, req, true);
       res.status(200).json(groupItem);
@@ -361,7 +409,7 @@ function mapGroups(groups, req) {
     ng.activitys = g.activitys;
     ng.images = g.images;
     ng.memberCount = g.members.length;
-    ng.appAdmin = (req.userId.toString() === process.env.ADMIN_USER);
+    ng.appAdmin = req.userId.toString() === process.env.ADMIN_USER;
     return ng;
   });
 }
@@ -372,7 +420,7 @@ function mapGroup(group, req, incAdmin) {
     name: group.name,
     tagline: group.tagline,
     description: group.description,
-    email: (req.appAdmin || req.groupAdmin) ? group.email : '',
+    email: req.appAdmin || req.groupAdmin ? group.email : "",
     website: group.website,
     members: group.members.length,
     images: group.images,
@@ -387,8 +435,8 @@ function mapGroup(group, req, incAdmin) {
 }
 
 function mapMembers(group, req) {
-  return { 
-    _id: group._id, 
+  return {
+    _id: group._id,
     name: group.name,
     members: group.members.map(m => {
       var rm = {};
@@ -402,7 +450,7 @@ function mapMembers(group, req) {
     }),
     groupMember: req.groupMember,
     groupAdmin: req.groupAdmin,
-    appAdmin: req.appAdmin 
+    appAdmin: req.appAdmin
   };
 }
 
@@ -415,5 +463,3 @@ function mapUser(user) {
     imageUrl: user.profile.imageUrl
   };
 }
-
-

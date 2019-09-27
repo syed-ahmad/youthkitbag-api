@@ -1,84 +1,89 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
-  email: {
-    type: String,
-    required: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  passwordAttempts: {
-    type: Number,
-    default: 0
-  },
-  locked: {
-    type: Boolean,
-    default: false
-  },
-  profile: {
-    firstname: {
-      type: String
+const userSchema = new Schema(
+  {
+    email: {
+      type: String,
+      required: true
     },
-    lastname: {
-      type: String
+    password: {
+      type: String,
+      required: true
     },
-    username: {
-      type: String
+    passwordAttempts: {
+      type: Number,
+      default: 0
     },
-    location: {
-      type: {
-        type: String, // Don't do `{ location: { type: String } }`
-        enum: ['Point'], // 'location.type' must be 'Point'
+    locked: {
+      type: Boolean,
+      default: false
+    },
+    profile: {
+      firstname: {
+        type: String
       },
-      coordinates: {
-        type: [Number]
+      lastname: {
+        type: String
+      },
+      username: {
+        type: String
+      },
+      location: {
+        type: {
+          type: String, // Don't do `{ location: { type: String } }`
+          enum: ["Point"] // 'location.type' must be 'Point'
+        },
+        coordinates: {
+          type: [Number]
+        }
+      },
+      groups: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "Group"
+        }
+      ],
+      images: [
+        {
+          image: {
+            type: String
+          },
+          imageUrl: {
+            type: String
+          }
+        }
+      ],
+      activitys: [String],
+      badges: [String]
+    },
+    package: {
+      name: { type: String, default: "free" },
+      icon: { type: String, default: "coffee" },
+      max: {
+        kit: { type: Number, default: 20 },
+        trade: { type: Number, default: 5 },
+        wanted: { type: Number, default: 5 },
+        stolen: { type: Number, default: 30 },
+        photos: { type: Number, default: 2 },
+        groups: { type: Number, default: 3 },
+        groupadmins: { type: Number, default: 2 }
+      },
+      size: {
+        kit: { type: Number, default: 0 },
+        trade: { type: Number, default: 0 },
+        wanted: { type: Number, default: 0 },
+        stolen: { type: Number, default: 0 },
+        photos: { type: Number, default: 0 },
+        groups: { type: Number, default: 0 },
+        groupadmins: { type: Number, default: 0 }
       }
     },
-    groups: [{
-      type: Schema.Types.ObjectId,
-      ref: 'Group'
-    }],
-    images: [
-      {
-        image: {
-          type: String
-        },
-        imageUrl: {
-          type: String
-        }  
-      }  
-    ],
-    activitys: [String],
-    badges: [String]
+    resetToken: String,
+    resetTokenExpiration: Date
   },
-  package: {
-    name: { type: String, default: 'free' },
-    icon: { type: String, default: 'coffee' },
-    max: { 
-      kit: { type: Number, default: 20 },
-      trade: { type: Number, default: 5 },
-      wanted: { type: Number, default: 5 },
-      stolen: { type: Number, default: 30 },
-      photos: { type: Number, default: 2 },
-      groups: { type: Number, default: 3 },
-      groupadmins: { type: Number, default: 2 }
-    },
-    size: {
-      kit: { type: Number, default: 0 },
-      trade: { type: Number, default: 0 },
-      wanted: { type: Number, default: 0 },
-      stolen: { type: Number, default: 0 },
-      photos: { type: Number, default: 0 },
-      groups: { type: Number, default: 0 },
-      groupadmins: { type: Number, default: 0 }
-    }
-  },
-  resetToken: String,
-  resetTokenExpiration: Date
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

@@ -1,13 +1,13 @@
-const Kit = require('../models/kit');
+const Kit = require("../models/kit");
 
 module.exports = (req, res, next) => {
   const kitId = req.params.kitId;
-  const query = { '_id': kitId, 'userId': req.userId };
+  const query = { _id: kitId, userId: req.userId };
 
   Kit.findOne(query)
     .then(kit => {
       if (!kit) {
-        const error = new Error('The requested kit item could not be found');
+        const error = new Error("The requested kit item could not be found");
         error.statusCode = 404;
         throw error;
       }
@@ -19,4 +19,4 @@ module.exports = (req, res, next) => {
       }
       next(err);
     });
-}
+};

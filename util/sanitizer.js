@@ -4,16 +4,20 @@
 // this ensure that these elements are properly converted to an array (clean up is done per item)
 exports.commaToArray = value => {
   if (value === undefined) return [];
-  
+
   if (Array.isArray(value)) {
     return value.filter(item => item.trim().length > 0);
   }
 
-  return value.split(',').filter(item => item.trim().length > 0);
-}
+  return value.split(",").filter(item => item.trim().length > 0);
+};
 
 exports.caseTagFormat = value => value.trim().replace(/ +/g, "-");
 
-exports.lowTagFormat = value => value.trim().replace(/ +/g, "-").toLowerCase();
+exports.lowTagFormat = value =>
+  value
+    .trim()
+    .replace(/ +/g, "-")
+    .toLowerCase();
 
 exports.lower = value => value.toLowerCase();

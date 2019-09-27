@@ -1,6 +1,6 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const User = require('../models/user');
-const Order = require('../models/order');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const User = require("../models/user");
+const Order = require("../models/order");
 
 const standardPackage = { kit: 100, trade: 25, wanted: 25, photos: 5 };
 const premiumPackage = { kit: 1000, trade: 100, wanted: 100, photos: 10 };
@@ -9,7 +9,7 @@ exports.postBuyPackage = (req, res, next) => {
   const token = req.body.stripeToken;
   const packageName = req.params.packageName;
 
-  let totalPrice = packageName === 'premium' ? 60.00 : 24.00;
+  let totalPrice = packageName === "premium" ? 60.0 : 24.0;
 
   const order = new Order({
     user: {
@@ -24,8 +24,8 @@ exports.postBuyPackage = (req, res, next) => {
     .then(result => {
       return stripe.charges.create({
         amount: totalPrice * 100,
-        currency: 'gbp',
-        description: 'Package purchase from YouthKitbag',
+        currency: "gbp",
+        description: "Package purchase from YouthKitbag",
         source: token,
         metadata: {
           order_id: result._id.toString()
@@ -33,15 +33,16 @@ exports.postBuyPackage = (req, res, next) => {
       });
     })
     .then(charge => {
-      if (!charge || charge.outcome.type != 'authorized') {
+      if (!charge || charge.outcome.type != "authorized") {
         throw new Error(charge.outcome.tradeer_message);
       }
       return User.findById(req.session.user._id);
     })
     .then(user => {
       user.package.name = packageName;
-      user.package.icon = packageName === 'premium' ? 'cocktail' : 'beer'; 
-      user.package.max = packageName === 'premium' ? premiumPackage : standardPackage;
+      user.package.icon = packageName === "premium" ? "cocktail" : "beer";
+      user.package.max =
+        packageName === "premium" ? premiumPackage : standardPackage;
       return user.save();
     })
     .then(user => {
@@ -51,7 +52,7 @@ exports.postBuyPackage = (req, res, next) => {
       });
     })
     .then(() => {
-      res.redirect('/kitbag');
+      res.redirect("/kitbag");
     })
     .catch(err => {
       if (!err.statusCode) {

@@ -1,19 +1,22 @@
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-const sgMail = require('@sendgrid/mail');
-const User = require('../models/user');
-const jwt = require('jsonwebtoken');
-const { validationResult} = require('express-validator');
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const sgMail = require("@sendgrid/mail");
+const User = require("../models/user");
+const jwt = require("jsonwebtoken");
+const { validationResult } = require("express-validator");
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const DOMAIN_URL = process.env.DOMAIN_URL || 'http://localhost:5000';
+const DOMAIN_URL = process.env.DOMAIN_URL || "http://localhost:5000";
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const VALIDATION_FAILED = 'Validation failed';
-const INVALID_CREDENTIALS = 'You have entered an invalid email or password';
-const RESET_TOKEN_EXPIRED = 'The reset password token has expired. Please request a new reset password token.';
-const ACCOUNT_LOCKED = 'Your account has been locked out. Please reset your password.';
-const PASSWORD_RESET = 'Your account password has been reset. Please not login using your new password.';
+const VALIDATION_FAILED = "Validation failed";
+const INVALID_CREDENTIALS = "You have entered an invalid email or password";
+const RESET_TOKEN_EXPIRED =
+  "The reset password token has expired. Please request a new reset password token.";
+const ACCOUNT_LOCKED =
+  "Your account has been locked out. Please reset your password.";
+const PASSWORD_RESET =
+  "Your account password has been reset. Please not login using your new password.";
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 
@@ -39,12 +42,12 @@ exports.signup = (req, res, next) => {
       return user.save();
     })
     .then(result => {
-      res.status(201).json({ message: 'User was created', userId: result._id });
+      res.status(201).json({ message: "User was created", userId: result._id });
       const msg = {
         to: email,
-        from: 'admin@youthkitbag.com',
-        subject: 'YouthKitbag Signup Successful',
-        text: 'Thank you for signing up to this service'
+        from: "admin@youthkitbag.com",
+        subject: "YouthKitbag Signup Successful",
+        text: "Thank you for signing up to this service"
       };
       return sgMail.send(msg);
     })
@@ -64,7 +67,7 @@ exports.login = (req, res, next) => {
     error.errors = errors.array();
     throw error;
   }
-  
+
   const email = req.body.email;
   const password = req.body.password;
   let loadedUser;
@@ -73,12 +76,12 @@ exports.login = (req, res, next) => {
     .then(user => {
       if (!user) {
         const error = new Error(INVALID_CREDENTIALS);
-        error.statusCode = 401; 
+        error.statusCode = 401;
         throw error;
       }
       if (user.locked) {
         const error = new Error(ACCOUNT_LOCKED);
-        error.statusCode = 401; 
+        error.statusCode = 401;
         throw error;
       }
       loadedUser = user;
@@ -95,23 +98,26 @@ exports.login = (req, res, next) => {
           .then(user => {
             if (user.locked) {
               const error = new Error(ACCOUNT_LOCKED);
-              error.statusCode = 401; 
+              error.statusCode = 401;
               throw error;
-            }    
+            }
             const error = new Error(INVALID_CREDENTIALS);
-            error.statusCode = 401; 
-            throw error;  
+            error.statusCode = 401;
+            throw error;
           })
-          .catch(err => { 
+          .catch(err => {
             throw err;
           });
       }
-      const token = jwt.sign({ 
+      const token = jwt.sign(
+        {
           email: loadedUser.email,
           userId: loadedUser._id.toString()
-        }, JWT_SECRET, { expiresIn: '1h' }
+        },
+        JWT_SECRET,
+        { expiresIn: "1h" }
       );
-      res.status(200).json({ token: token, userId: loadedUser._id.toString() })
+      res.status(200).json({ token: token, userId: loadedUser._id.toString() });
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -137,13 +143,12 @@ exports.reset = (req, res, next) => {
       err.statusCode = 500;
       throw err;
     }
-    const token = buffer.toString('hex');
-    User
-      .findOne({email: email})
+    const token = buffer.toString("hex");
+    User.findOne({ email: email })
       .then(user => {
         if (!user) {
           const error = new Error(INVALID_CREDENTIALS);
-          error.statusCode = 401; 
+          error.statusCode = 401;
           throw error;
         }
         user.resetToken = token;
@@ -153,11 +158,16 @@ exports.reset = (req, res, next) => {
         return user.save();
       })
       .then(result => {
-        res.status(200).json({ message: 'Password reset requested (token shown for testing)', token: token });
+        res
+          .status(200)
+          .json({
+            message: "Password reset requested (token shown for testing)",
+            token: token
+          });
         const msg = {
           to: email,
-          from: 'admin@youthkitbag.com',
-          subject: 'YouthKitbag Reset Password',
+          from: "admin@youthkitbag.com",
+          subject: "YouthKitbag Reset Password",
           text: `
             <p>You requested a password reset</p>
             <p>Click this <a href="${DOMAIN_URL}/reset/${token}">link</a> to set a new password</p>
@@ -176,15 +186,14 @@ exports.reset = (req, res, next) => {
 
 exports.getNewPassword = (req, res, next) => {
   const token = req.params.token;
-  User
-    .findOne({
-      resetToken: token, 
-      resetTokenExpiration: {$gt: Date.now()}
-    })
+  User.findOne({
+    resetToken: token,
+    resetTokenExpiration: { $gt: Date.now() }
+  })
     .then(user => {
       if (!user) {
         const error = new Error(RESET_TOKEN_EXPIRED);
-        error.statusCode = 401; 
+        error.statusCode = 401;
         throw error;
       }
       res.status(200).json({
@@ -198,7 +207,7 @@ exports.getNewPassword = (req, res, next) => {
       }
       next(err);
     });
-  };
+};
 
 exports.postNewPassword = (req, res, next) => {
   const errors = validationResult(req);
@@ -214,16 +223,15 @@ exports.postNewPassword = (req, res, next) => {
   const passwordToken = req.body.passwordToken;
   let resetUser;
 
-  User
-    .findOne({
-      resetToken: passwordToken, 
-      resetTokenExpiration: {$gt: Date.now()}, 
-      _id: userId
-    })
+  User.findOne({
+    resetToken: passwordToken,
+    resetTokenExpiration: { $gt: Date.now() },
+    _id: userId
+  })
     .then(user => {
       if (!user) {
         const error = new Error(RESET_TOKEN_EXPIRED);
-        error.statusCode = 401; 
+        error.statusCode = 401;
         throw error;
       }
       resetUser = user;
@@ -245,4 +253,3 @@ exports.postNewPassword = (req, res, next) => {
       next(err);
     });
 };
-

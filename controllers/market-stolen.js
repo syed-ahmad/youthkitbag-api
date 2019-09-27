@@ -1,16 +1,21 @@
-const Stolen = require('../models/stolen');
+const Stolen = require("../models/stolen");
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'recovered', value: 'All Recovered' } ];
+const filterOptions = [
+  { key: "all", value: "All" },
+  { key: "title", value: "Title" },
+  { key: "activity", value: "Activity" },
+  { key: "group", value: "Group" },
+  { key: "recovered", value: "All Recovered" }
+];
 
 // GET request a stolen item
 exports.getItem = (req, res, next) => {
   const stolenId = req.params.stolenId;
 
-  Stolen
-    .findById(stolenId)
+  Stolen.findById(stolenId)
     .then(stolen => {
       if (!stolen) {
-        const error = new Error('The requested stolen item count not be found');
+        const error = new Error("The requested stolen item count not be found");
         error.statusCode = 500;
         throw error;
       }
@@ -41,29 +46,42 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { recovered: (by === 'recovered') };
+  let query = { recovered: by === "recovered" };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case 'title': {
-        query = { recovered: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+      case "title": {
+        query = {
+          recovered: false,
+          title: { $regex: `.*${search}.*`, $options: "i" }
+        };
         break;
       }
-      case 'activity': {
+      case "activity": {
         query = { recovered: false, activitys: search };
         break;
       }
-      case 'group': {
+      case "group": {
         query = { userId: req.userId, recovered: true };
         break;
       }
-      case 'recovered': {
+      case "recovered": {
         query = { recovered: true };
         break;
       }
       default: {
-        query = { $and: [ { recovered: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = {
+          $and: [
+            { recovered: false },
+            {
+              $or: [
+                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
     }
@@ -71,8 +89,7 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Stolen
-    .find(query)
+  Stolen.find(query)
     .countDocuments()
     .then(numberOfItems => {
       totalItems = numberOfItems;
@@ -96,7 +113,7 @@ exports.getItems = (req, res, next) => {
         filter: {
           by: by,
           search: search,
-          options: filterOptions  
+          options: filterOptions
         },
         pagination: {
           totalItems: totalItems,
@@ -107,7 +124,8 @@ exports.getItems = (req, res, next) => {
           nextPage: page + 1,
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
-          filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
+          filterUrl:
+            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
         }
       });
     })

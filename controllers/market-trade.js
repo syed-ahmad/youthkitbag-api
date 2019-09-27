@@ -1,16 +1,21 @@
-const Trade = require('../models/trade');
+const Trade = require("../models/trade");
 
-const filterOptions = [ { key: 'all', value: 'All' }, { key: 'title', value: 'Title' }, { key: 'activity', value: 'Activity' }, { key: 'group', value: 'Group' }, { key: 'traded', value: 'All Traded' } ];
+const filterOptions = [
+  { key: "all", value: "All" },
+  { key: "title", value: "Title" },
+  { key: "activity", value: "Activity" },
+  { key: "group", value: "Group" },
+  { key: "traded", value: "All Traded" }
+];
 
 // GET request a trade item
 exports.getItem = (req, res, next) => {
   const tradeId = req.params.tradeId;
-  
-  Trade
-    .findById(tradeId)
+
+  Trade.findById(tradeId)
     .then(trade => {
       if (!trade) {
-        const error = new Error('The requested trade could not be found');
+        const error = new Error("The requested trade could not be found");
         error.statusCode = 500;
         throw error;
       }
@@ -41,29 +46,42 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { traded: (by === 'traded') };
+  let query = { traded: by === "traded" };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
-      case 'title': {
-        query = { traded: false, title: { $regex : `.*${search}.*`, $options: 'i' } };
+      case "title": {
+        query = {
+          traded: false,
+          title: { $regex: `.*${search}.*`, $options: "i" }
+        };
         break;
       }
-      case 'activity': {
+      case "activity": {
         query = { traded: false, activitys: search };
         break;
       }
-      case 'group': {
+      case "group": {
         query = { userId: req.userId, traded: true };
         break;
       }
-      case 'traded': {
+      case "traded": {
         query = { userId: req.userId, traded: true };
         break;
       }
       default: {
-        query = { $and: [ { traded: false }, { $or: [{ title: { $regex : `.*${search}.*`, $options: 'i' } },{ activitys: search }]}]};
+        query = {
+          $and: [
+            { traded: false },
+            {
+              $or: [
+                { title: { $regex: `.*${search}.*`, $options: "i" } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
     }
@@ -71,8 +89,7 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Trade
-    .find(query)
+  Trade.find(query)
     .countDocuments()
     .then(numberOfTrades => {
       totalItems = numberOfTrades;
@@ -107,7 +124,8 @@ exports.getItems = (req, res, next) => {
           nextPage: page + 1,
           previousPage: page - 1,
           lastPage: Math.ceil(totalItems / itemsPerPage),
-          filterUrl: (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
+          filterUrl:
+            (by ? `&by=${by}` : "") + (search ? `&search=${search}` : "")
         }
       });
     })
