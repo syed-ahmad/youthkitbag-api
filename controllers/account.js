@@ -1,5 +1,4 @@
 const User = require('../models/user');
-const { validationResult } = require('express-validator');
 
 exports.getProfile = (req, res, next) => {
   User.findById(req.userId)
@@ -34,8 +33,9 @@ exports.postProfile = (req, res, next) => {
       }
       user.profile = {
         username: username,
-        image: image.key,
-        imageUrl: image.location,
+        //TODO: Change to array of images
+        // image: image.key,
+        // imageUrl: image.location,
         activitys: activitys,
         groups: groups
       };

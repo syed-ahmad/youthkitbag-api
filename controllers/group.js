@@ -1,5 +1,6 @@
 const Group = require('../models/group');
 const User = require('../models/user');
+const awsHelper = require('../util/aws-helper');
 const { getPagination } = require('../util/list-helper');
 
 const filterOptions = [
@@ -212,7 +213,7 @@ exports.leaveMember = (req, res, next) => {
 
   Group.findById(groupId)
     .then(group => {
-      if (admin === req.userId) {
+      if (group.admin.toString() === req.userId.toString()) {
         const error = new Error(
           'You may not leave a group for which you are the key admin. You must transfer ownership first.'
         );
@@ -258,35 +259,35 @@ exports.leaveMember = (req, res, next) => {
 exports.edit = (req, res, next) => {
   const groupId = req.params.groupId;
 
-  // Group.findOne({ _id: { $ne: groupId }, tagline: `${tagline}`})
-  //   .then(existingGroup => {
-  //     if (existingGroup) {
-  //       const error = new Error('A group already exists with this tagline.');
-  //       error.statusCode = 404;
-  //       throw error;
-  //     }
-  //     return Group.findById(groupId);
-  //   })
-  //   .then(group => {
-  //     if (!group) {
-  //       const error = new Error('The requested group could not be found');
-  //       error.statusCode = 404;
-  //       throw error;
-  //     }
-  //     //group.tagline = tagline;
-  //     //group.activitys = activitys;
-  //     group.status = status;
-  //     return group.save();
-  //   })
-  //   .then(result => {
-  //     res.status(200).json({ group: result });
-  //   })
-  //   .catch(err => {
-  //     if (!err.statusCode) {
-  //       err.statusCode = 500;
-  //     }
-  //     next(err);
-  //   });
+  Group.findById(groupId)
+    .then(existingGroup => {
+      if (existingGroup) {
+        const error = new Error('A group already exists with this tagline.');
+        error.statusCode = 404;
+        throw error;
+      }
+      return Group.findById(groupId);
+    })
+    .then(group => {
+      if (!group) {
+        const error = new Error('The requested group could not be found');
+        error.statusCode = 404;
+        throw error;
+      }
+      //group.tagline = tagline;
+      //group.activitys = activitys;
+      group.status = status;
+      return group.save();
+    })
+    .then(result => {
+      res.status(200).json({ group: result });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };
 
 // GET request to return page of groups for AppAdmin use only

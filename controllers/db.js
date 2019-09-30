@@ -11,7 +11,7 @@ exports.getCollection = (req, res, next) => {
   const collection = req.params.collection;
 
   User.findById(req.userId)
-    .then(user => {
+    .then(() => {
       if (req.userId.toString() !== process.env.ADMIN_USER) {
         const error = new Error('You are not authorized for this feature');
         error.statusCode = 403;

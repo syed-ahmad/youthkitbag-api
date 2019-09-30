@@ -1,6 +1,4 @@
 const Trade = require('../models/trade');
-const Message = require('../models/message');
-const User = require('../models/user');
 
 exports.createMessage = (req, res, next) => {
   const sourceType = req.body.sourceType;
@@ -21,8 +19,6 @@ exports.createMessage = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-
-      const itemOwner = req.userId.toString() === trade.userId.toString();
 
       res.render('market/message', {
         pageTitle: `Create message (item: ${sourceId})`,

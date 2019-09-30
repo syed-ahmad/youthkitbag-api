@@ -1,7 +1,7 @@
-exports.getPurchase = (req, res, next) => {
-  const package = req.params.package;
+exports.getPurchase = (req, res) => {
+  const userPackage = req.params.package;
   res.status(200).json({
-    packageName: package,
-    totalPrice: package === 'premium' ? 60 : 24
+    packageName: userPackage,
+    totalPrice: userPackage === 'premium' ? 60 : 24
   });
 };

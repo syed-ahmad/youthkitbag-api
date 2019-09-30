@@ -1,3 +1,5 @@
+/* eslint-disable */
+//TODO: Must convert this to middleware
 if (!Array.prototype.fixDateTime) {
   String.prototype.fixDateTime = function() {
     'use strict';

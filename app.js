@@ -78,7 +78,7 @@ const corsOptions = {
 
 app.use('/', cors(corsOptions), rootRoutes);
 
-app.use((error, req, res, next) => {
+app.use((error, req, res) => {
   console.log('ERROR', error);
   const status = error.statusCode || 400;
   const message = error.message;
@@ -88,7 +88,7 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(result => {
+  .then(() => {
     app.listen(PORT, () => {
       console.log('listening on port', PORT);
     });

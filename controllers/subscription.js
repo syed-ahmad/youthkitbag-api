@@ -1,5 +1,4 @@
-exports.getPackage = (req, res, next) => {
-  const packageName = req.params.packageName;
+exports.getPackage = (req, res) => {
   res.status(200).json({
     _id: '12345',
     title: 'Package title',

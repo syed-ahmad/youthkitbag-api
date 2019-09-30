@@ -13,7 +13,7 @@ aws.config.update({
 
 const s3 = new aws.S3({ signatureVersion: 's3v4' });
 
-exports.getSignS3 = (req, res, next) => {
+exports.getSignS3 = (req, res) => {
   const fileName = req.query.filename;
   const fileType = req.query.filetype;
 
@@ -37,7 +37,7 @@ exports.getSignS3 = (req, res, next) => {
   });
 };
 
-exports.postStore = (req, res, next) => {
+exports.postStore = (req, res) => {
   res.status(200).json({ loaded: true });
 };
 
@@ -93,6 +93,6 @@ exports.add = (req, res, next) => {
     });
 };
 
-exports.delete = (req, res, next) => {
+exports.delete = (req, res) => {
   res.status(200).json({ deleted: true });
 };

@@ -159,10 +159,12 @@ exports.add = (req, res, next) => {
 
 // GET request to get an already existing wanted item
 exports.getItem = (req, res, next) => {
+  console.log('WANT', req.params);
   const wantedId = req.params.wantedId;
 
   Wanted.findById(wantedId)
     .then(wanted => {
+      console.log('WANTED', wanted);
       res.status(200).json(wanted);
     })
     .catch(err => {
