@@ -26,6 +26,7 @@ exports.editProfile = (req, res, next) => {
   const { firstname, lastname, username, location, activitys } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
+  //TDDO: Must fix images saved for user
   const images = activeImages.map(i => {
     return { ...i, state: 'A' };
   });

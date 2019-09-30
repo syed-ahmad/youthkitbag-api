@@ -281,7 +281,7 @@ exports.delete = (req, res, next) => {
   Kit.findById(kitId)
     .then(kit => {
       if (kit.images) {
-        kit.images.forEach((img, i) => {
+        kit.images.forEach(img => {
           awsHelper.deleteImage(img.image);
         });
       }

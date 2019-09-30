@@ -6,7 +6,7 @@ exports.signupValidation = [
     .isEmail()
     .withMessage('Please enter a valid email')
     .normalizeEmail()
-    .custom((value, { req }) => {
+    .custom(value => {
       return User.findOne({ email: value }).then(userDoc => {
         if (userDoc) {
           return Promise.reject('Email already exists.');
@@ -39,7 +39,7 @@ exports.resetValidation = [
     .isEmail()
     .withMessage('Please enter a valid email')
     .normalizeEmail()
-    .custom((value, { req }) => {
+    .custom(value => {
       return User.findOne({ email: value }).then(userDoc => {
         if (!userDoc) {
           return Promise.reject('Account does not exist');

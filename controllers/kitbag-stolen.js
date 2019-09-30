@@ -80,7 +80,6 @@ exports.add = (req, res, next) => {
     location,
     tracking,
     activitys,
-    groups,
     security,
     recovered,
     sourceId
@@ -351,7 +350,7 @@ exports.delete = (req, res, next) => {
 
   Stolen.findById(stolenId)
     .then(stolen => {
-      if (trade.recovered) {
+      if (stolen.recovered) {
         const error = new Error(
           'You have already recovered this item, so it cannot be deleted'
         );
@@ -371,7 +370,7 @@ exports.delete = (req, res, next) => {
       }
       return user.save();
     })
-    .then(kit => {
+    .then(() => {
       if (sourceId) {
         Kit.findById(sourceId).then(kit => {
           if (!kit) {

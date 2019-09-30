@@ -1,9 +1,5 @@
 const { body } = require('express-validator');
-const {
-  commaToArray,
-  caseTagFormat,
-  lowTagFormat
-} = require('../util/sanitizer');
+const { commaToArray, lowTagFormat } = require('../util/sanitizer');
 
 exports.userValidation = [
   body('lastname', 'Please enter a last name of at least 2 characters')

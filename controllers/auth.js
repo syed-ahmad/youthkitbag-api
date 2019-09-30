@@ -157,7 +157,7 @@ exports.reset = (req, res, next) => {
         user.locked = false;
         return user.save();
       })
-      .then(result => {
+      .then(() => {
         res.status(200).json({
           message: 'Password reset requested (token shown for testing)',
           token: token
@@ -241,7 +241,7 @@ exports.postNewPassword = (req, res, next) => {
       resetUser.resetTokenExpiration = undefined;
       return resetUser.save();
     })
-    .then(result => {
+    .then(() => {
       res.status(200).json({ message: PASSWORD_RESET });
     })
     .catch(err => {
