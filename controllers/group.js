@@ -455,6 +455,6 @@ function mapUser(user) {
     username: user.profile.username,
     firstname: user.profile.firstname,
     lastname: user.profile.lastname,
-    imageUrl: user.profile.imageUrl
+    images: user.profile.images
   };
 }

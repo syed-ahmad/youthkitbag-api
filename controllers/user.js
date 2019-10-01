@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const awsHelper = require('../util/aws-helper');
 
 exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
@@ -26,7 +27,6 @@ exports.editProfile = (req, res, next) => {
   const { firstname, lastname, username, location, activitys } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
-  //TDDO: Must fix images saved for user
   const images = activeImages.map(i => {
     return { ...i, state: 'A' };
   });
@@ -44,6 +44,7 @@ exports.editProfile = (req, res, next) => {
       user.profile.username = username;
       user.profile.location = location;
       user.profile.activitys = activitys;
+      user.profile.images = images;
       console.log('USER B4', user);
       return user.save();
     })
