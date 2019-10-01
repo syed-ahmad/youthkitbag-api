@@ -2,7 +2,6 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Stolen = require('../models/stolen');
 const User = require('../models/user');
-require('../util/date-helper');
 
 const filterOptions = [
   { key: 'all', value: 'All' },

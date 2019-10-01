@@ -2,7 +2,8 @@ const { body } = require('express-validator');
 const {
   commaToArray,
   caseTagFormat,
-  lowTagFormat
+  lowTagFormat,
+  dateFormat
 } = require('../util/sanitizer');
 
 exports.kitbagValidation = [
@@ -22,10 +23,7 @@ exports.kitValidation = [
   body('security.*').customSanitizer(caseTagFormat),
   body('purchases.*.from').trim(),
   body('purchases.*.quantity').toInt(),
-  body('purchases.*.ondate')
-    .optional({ checkFalsy: true })
-    .isISO8601()
-    .toDate(),
+  body('purchases.*.ondate').customSanitizer(dateFormat),
   body('purchases.*.price').toFloat(),
   body('inbag.*.location').trim(),
   body('inbag.*.quantity').toInt(),
@@ -58,6 +56,9 @@ exports.wantedValidation = [
 exports.stolenValidation = [
   body('security').customSanitizer(commaToArray),
   body('security.*').customSanitizer(caseTagFormat),
-  //body('stolenOn', 'Please specify the date the item was stolen').isISO8601().toDate(),
+  body(
+    'stolenOn',
+    'Please specify the date the item was stolen'
+  ).customSanitizer(dateFormat),
   body('tracking').trim()
 ];

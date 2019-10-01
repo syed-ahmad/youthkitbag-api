@@ -1,7 +1,6 @@
 const Kit = require('../models/kit');
 const User = require('../models/user');
 const awsHelper = require('../util/aws-helper');
-require('../util/date-helper');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
