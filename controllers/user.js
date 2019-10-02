@@ -5,6 +5,7 @@ exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
 
   User.findById(userId)
+    .populate('profile.groups', 'name images')
     .then(user => {
       res.status(200).json({
         profile: { ...user.profile, _id: user._id },
