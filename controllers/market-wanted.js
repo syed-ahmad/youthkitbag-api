@@ -4,7 +4,7 @@ const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'obtained', value: 'All Recovered' }
+  { key: 'obtained', value: 'Obtained' }
 ];
 
 // GET request a wanted item

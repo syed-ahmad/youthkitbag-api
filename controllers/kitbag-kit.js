@@ -8,7 +8,7 @@ const filterOptions = [
   { key: 'activity', value: 'Activity' },
   { key: 'tag', value: 'Tag' },
   { key: 'container', value: 'Container' },
-  { key: 'inactive', value: 'All Inactive' }
+  { key: 'inactive', value: 'Inactive' }
 ];
 
 // POST request to add a new item into kitbag

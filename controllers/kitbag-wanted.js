@@ -8,7 +8,7 @@ const filterOptions = [
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
   { key: 'group', value: 'Group' },
-  { key: 'obtained', value: 'All Recovered' }
+  { key: 'obtained', value: 'Obtained' }
 ];
 
 // GET request to return kit item as item for wanted

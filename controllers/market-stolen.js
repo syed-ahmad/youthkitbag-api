@@ -5,7 +5,7 @@ const filterOptions = [
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
   { key: 'group', value: 'Group' },
-  { key: 'recovered', value: 'All Recovered' }
+  { key: 'recovered', value: 'Recovered' }
 ];
 
 // GET request a stolen item

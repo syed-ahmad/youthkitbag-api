@@ -8,7 +8,7 @@ const filterOptions = [
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
   { key: 'group', value: 'Group' },
-  { key: 'traded', value: 'All Traded' }
+  { key: 'traded', value: 'Traded' }
 ];
 
 // GET request to return kit item as item for trade
