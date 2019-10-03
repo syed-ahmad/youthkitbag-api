@@ -5,10 +5,10 @@ exports.groupValidation = [
   body('name', 'Please enter a name of at least 5 characters')
     .trim()
     .isLength({ min: 5 }),
-  body('tagline', 'Please enter a tagline of at least 5 characters')
+  body('tagline', 'Please enter a tagline of at least 3 characters')
     .trim()
     .customSanitizer(lowTagFormat)
-    .isLength({ min: 5 }),
+    .isLength({ min: 3 }),
   body('description', 'Please enter a description of at least 10 characters')
     .trim()
     .isLength({ min: 10 }),

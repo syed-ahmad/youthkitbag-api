@@ -3,12 +3,6 @@ const User = require('../models/user');
 const awsHelper = require('../util/aws-helper');
 const { getPagination } = require('../util/list-helper');
 
-const filterOptions = [
-  { key: 'all', value: 'All' },
-  { key: 'name', value: 'Name' },
-  { key: 'activity', value: 'Activity' }
-];
-
 // POST request to add a new group for status
 exports.add = (req, res, next) => {
   const {
@@ -298,23 +292,63 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = {};
+  let query = req.appAdmin
+    ? {}
+    : {
+        $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+      };
+
+  if (by === 'requested' && !req.appAdmin) {
+    by = '';
+  }
 
   if (search || by) {
     search = search ? search.toLowerCase() : '';
     switch (by) {
       case 'name': {
-        query = { name: { $regex: `.*${search}.*`, $options: 'i' } };
+        query = {
+          $and: [
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
+            { name: { $regex: `.*${search}.*`, $options: 'i' } }
+          ]
+        };
         break;
       }
       case 'activity': {
-        query = { activitys: search };
+        query = {
+          $and: [
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
+            { activitys: search }
+          ]
+        };
+        break;
+      }
+      case 'requested': {
+        query = {
+          $and: [
+            {
+              status: { $eq: 'requested' }
+            },
+            {
+              $or: [
+                { name: { $regex: `.*${search}.*`, $options: 'i' } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
       default: {
         query = {
           $and: [
-            { status: { $ne: 'blocked' } },
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
             {
               $or: [
                 { name: { $regex: `.*${search}.*`, $options: 'i' } },
@@ -328,8 +362,20 @@ exports.getItems = (req, res, next) => {
     }
   }
 
-  let orderby = { updatedAt: -1 };
+  const filterOptions = req.appAdmin
+    ? [
+        { key: 'all', value: 'All' },
+        { key: 'name', value: 'Name' },
+        { key: 'activity', value: 'Activity' },
+        { key: 'requested', value: 'Requested' }
+      ]
+    : [
+        { key: 'all', value: 'All' },
+        { key: 'name', value: 'Name' },
+        { key: 'activity', value: 'Activity' }
+      ];
 
+  let orderby = { updatedAt: -1 };
   Group.find(query)
     .countDocuments()
     .then(numberOfItems => {

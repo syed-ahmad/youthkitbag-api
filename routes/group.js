@@ -82,7 +82,7 @@ router.put(
 
 // groupCheck is used to apply appadmin / groupadmin reference on returned object
 // so that ui can display additional options
-router.get('/search', searchValidation, groupController.getItems);
+router.get('/search', groupCheck, searchValidation, groupController.getItems);
 
 // group member users can see other members
 // they must be in the group or app admin
