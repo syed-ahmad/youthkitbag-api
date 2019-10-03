@@ -2,6 +2,8 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/user');
 const Order = require('../models/order');
 
+// keeping defaults listed here for comparison
+// eslint-disable-next-line no-unused-vars
 const freePackage = {
   kit: 20,
   trade: 5,
