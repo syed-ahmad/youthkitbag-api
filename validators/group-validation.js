@@ -23,5 +23,6 @@ exports.groupValidation = [
   body('activitys', 'Please specify at least one activity')
     .customSanitizer(commaToArray)
     .isArray({ min: 1 }),
-  body('activitys.*').customSanitizer(lowTagFormat)
+  body('activitys.*').customSanitizer(lowTagFormat),
+  body('images', 'Please add at least one image').isArray({ min: 1 })
 ];
