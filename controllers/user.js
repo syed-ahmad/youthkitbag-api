@@ -23,9 +23,8 @@ exports.getUser = (req, res, next) => {
 
 // PUT request to save edited changes to existing item in kitbag
 exports.editProfile = (req, res, next) => {
-  console.log('EDIT', req.params, req.body);
   const userId = req.params.userId;
-  const { firstname, lastname, username, location, activitys } = req.body;
+  const { firstname, lastname, username, activitys } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
   const images = activeImages.map(i => {
@@ -43,15 +42,12 @@ exports.editProfile = (req, res, next) => {
       user.profile.firstname = firstname;
       user.profile.lastname = lastname;
       user.profile.username = username;
-      user.profile.location = location;
       user.profile.activitys = activitys;
       user.profile.images = images;
-      console.log('USER B4', user);
       return user.save();
     })
     .then(result => {
       const profile = { ...result.profile, _id: result._id };
-      console.log('PROF', profile);
       res.status(201).json({
         message: `User profile successfully updated.`,
         profile: profile
