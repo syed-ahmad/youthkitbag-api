@@ -5,10 +5,22 @@ exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
 
   User.findById(userId)
-    .populate('profile.groups', 'name images')
+    .populate('profile.groups', 'name images members')
     .then(user => {
+      const groups = user.profile.groups.map(g => {
+        return {
+          _id: g._id,
+          images: g.images,
+          name: g.name,
+          members: g.members
+            .filter(m => m.user.toString() === userId.toString())
+            .map(m => {
+              return { state: m.state, permission: m.permission };
+            })
+        };
+      });
       res.status(200).json({
-        profile: { ...user.profile, _id: user._id },
+        profile: { ...user.profile, _id: user._id, groups: groups },
         package: user.package,
         email: user.email
       });
