@@ -62,8 +62,8 @@ const groupSchema = new Schema(
         comment: {
           type: String
         },
-        permission: [String]
-        // an array of permission levels, start with none. When approved then given M = member, but can be raised to M,A = member, admin - allows expansion of permission
+        permissions: [String]
+        // an array of permission levels, start with none. When approved then given M = member, but can be raised to M,A = member, admin - allows expansion of permissions
       }
     ],
     admin: {

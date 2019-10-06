@@ -22,12 +22,12 @@ module.exports = (req, res, next) => {
         }
         if (
           group.members.length === 0 ||
-          group.members[0].permission.length === 0
+          group.members[0].permissions.length === 0
         ) {
           next();
         } else {
-          req.groupAdmin = group.members[0].permission.includes('admin');
-          req.groupMember = group.members[0].permission.includes('member');
+          req.groupAdmin = group.members[0].permissions.includes('admin');
+          req.groupMember = group.members[0].permissions.includes('member');
           next();
         }
       })

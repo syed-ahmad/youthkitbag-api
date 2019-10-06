@@ -15,7 +15,7 @@ exports.getUser = (req, res, next) => {
           members: g.members
             .filter(m => m.user.toString() === userId.toString())
             .map(m => {
-              return { state: m.state, permission: m.permission };
+              return { state: m.state, permissions: m.permissions };
             })
         };
       });

@@ -48,7 +48,7 @@ exports.add = (req, res, next) => {
     user: req.userId,
     state: 'approved',
     stateAt: Date.now(),
-    permission: ['member', 'admin']
+    permissions: ['member', 'admin']
   };
   group.members.push(member);
 
@@ -137,7 +137,7 @@ exports.editMemberState = (req, res, next) => {
         if (m.state !== state) {
           m.state = state;
           m.stateAt = Date.now();
-          m.permission =
+          m.permissions =
             state === 'suspended' || state === 'rejected' ? [] : ['member'];
           updated = true;
         }
@@ -169,7 +169,7 @@ exports.joinMember = (req, res, next) => {
     user: req.userId,
     state: 'requested',
     stateAt: Date.now(),
-    permission: []
+    permissions: []
   };
 
   let groupName;
@@ -219,7 +219,7 @@ exports.leaveMember = (req, res, next) => {
         if (m.state !== 'left') {
           m.state = 'left';
           m.stateAt = Date.now();
-          m.permission = [];
+          m.permissions = [];
           updated = true;
         }
         return m;
@@ -485,7 +485,7 @@ function mapMembers(group, req) {
       rm.state = m.state;
       rm.stateAt = m.stateAt;
       rm.comment = m.comment;
-      rm.permission = m.permission;
+      rm.permissions = m.permissions;
       rm.user = mapUser(m.user);
       return rm;
     }),
