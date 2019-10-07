@@ -468,6 +468,7 @@ function mapGroup(group, req, incAdmin) {
     activitys: group.activitys,
     status: group.status,
     readonly: true,
+    groupMemberState: req.groupMemberState,
     groupMember: req.groupMember,
     groupAdmin: req.groupAdmin,
     appAdmin: req.appAdmin,

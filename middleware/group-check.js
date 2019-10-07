@@ -20,10 +20,10 @@ module.exports = (req, res, next) => {
           error.statusCode = 404;
           throw error;
         }
-        if (
-          group.members.length === 0 ||
-          group.members[0].permissions.length === 0
-        ) {
+        if (group.members.length === 0) {
+          next();
+        } else if (group.members[0].permissions.length === 0) {
+          req.groupMemberState = group.members[0].state;
           next();
         } else {
           req.groupAdmin = group.members[0].permissions.includes('admin');
