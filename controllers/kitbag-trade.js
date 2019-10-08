@@ -421,9 +421,15 @@ function mapGroups(profile, activitys, userId) {
   });
 
   var event = new Date();
-  const today = event.toISOString();
+  const today = event
+    .toISOString()
+    .split('T', 1)[0]
+    .concat('T00:00:00.000Z');
   event.setDate(event.getDate() + 7);
-  const nextweek = event.toISOString();
+  const nextweek = event
+    .toISOString()
+    .split('T', 1)[0]
+    .concat('T00:00:00.000Z');
 
   return groups
     .filter(g => g.member)
