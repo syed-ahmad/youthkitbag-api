@@ -24,7 +24,7 @@ exports.getProfile = (req, res, next) => {
 exports.postProfile = (req, res, next) => {
   const { username, activitys, groups } = req.body;
 
-  User.findById(req.userIdÓ)
+  User.findById(req.userId)
     .then(user => {
       if (!user) {
         const error = new Error('User not found');

@@ -37,6 +37,9 @@ const tradeSchema = new Schema(
     condition: {
       type: String
     },
+    freeTrade: {
+      type: Boolean
+    },
     askingPrice: {
       type: Number
     },
@@ -63,6 +66,9 @@ const tradeSchema = new Schema(
         },
         available: {
           type: Date
+        },
+        include: {
+          type: Boolean
         }
       }
     ],

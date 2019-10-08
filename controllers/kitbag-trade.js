@@ -37,7 +37,7 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       sourceKit = kit;
-      return User.findById(req.userId);
+      return User.findById(req.userId).populate('profile.groups');
     })
     .then(user => {
       res.status(200).json({
@@ -50,11 +50,7 @@ exports.getAdd = (req, res, next) => {
         location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
-        groups: user.groups
-          ? user.groups.map(g => {
-              g.groupId, g.name, '2019-01-01';
-            })
-          : [],
+        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
         tradeDetails: [],
         traded: false,
         sourceId: sourceKit._id,
@@ -405,3 +401,41 @@ exports.delete = (req, res, next) => {
       next(err);
     });
 };
+
+function mapGroups(profile, activitys, userId) {
+  if (!profile.groups || profile.groups.length === 0) {
+    return [];
+  }
+
+  const groups = profile.groups.map(g => {
+    return {
+      _id: g._id,
+      name: g.name,
+      member: g.members
+        .filter(m => m.user.toString() === userId.toString())
+        .map(m => {
+          return m.permissions.includes('member');
+        }),
+      activity: g.activitys.some(r => activitys.includes(r))
+    };
+  });
+
+  var event = new Date();
+  const today = event.toISOString();
+  event.setDate(event.getDate() + 7);
+  const nextweek = event.toISOString();
+
+  return groups
+    .filter(g => g.member)
+    .map(g => {
+      return {
+        _id: g._id,
+        name: g.name,
+        available: g.activity ? today : nextweek,
+        include: g.activity
+      };
+    })
+    .sort(function(x, y) {
+      return x.include === y.include ? 0 : x.include ? -1 : 1;
+    });
+}
