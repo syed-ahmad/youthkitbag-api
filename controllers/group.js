@@ -215,7 +215,7 @@ exports.leaveMember = (req, res, next) => {
         throw error;
       }
       const members = group.members.map(m => {
-        if (m._id !== req.userId) return m;
+        if (m.user._id.toString() !== req.userId.toString()) return m;
         if (m.state !== 'left') {
           m.state = 'left';
           m.stateAt = Date.now();
@@ -449,7 +449,7 @@ function mapGroups(groups, req) {
     ng.status = g.status;
     ng.activitys = g.activitys;
     ng.images = g.images;
-    ng.memberCount = g.members.length;
+    ng.memberCount = g.members.filter(m => m.state !== 'left').length;
     ng.appAdmin = req.userId.toString() === process.env.ADMIN_USER;
     return ng;
   });
