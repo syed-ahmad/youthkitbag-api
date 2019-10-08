@@ -58,11 +58,9 @@ exports.editProfile = (req, res, next) => {
       user.profile.images = images;
       return user.save();
     })
-    .then(result => {
-      const profile = { ...result.profile, _id: result._id };
+    .then(() => {
       res.status(201).json({
-        message: `User profile successfully updated.`,
-        profile: profile
+        message: `User profile successfully updated.`
       });
     })
     .catch(err => {
