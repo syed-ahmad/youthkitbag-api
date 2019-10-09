@@ -40,6 +40,7 @@ exports.getItem = (req, res, next) => {
 
 // GET request trade items based on search/pagination
 exports.getItems = (req, res, next) => {
+  console.log('INGROUPS', req.inGroups);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
