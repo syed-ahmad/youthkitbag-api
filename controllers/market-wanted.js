@@ -44,34 +44,35 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { obtained: by === 'obtained' };
+  const groupArray = req.inGroups.map(g => g._id);
+
+  let query = {
+    obtained: by === 'obtained',
+    userId: { $ne: req.userId },
+    groups: {
+      $elemMatch: {
+        _id: groupArray,
+        include: true,
+        available: { $lt: new Date() }
+      }
+    }
+  };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = {
-          obtained: false,
-          title: { $regex: `.*${search}.*`, $options: 'i' }
-        };
+        query = { ...query, title: { $regex: `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { obtained: false, activitys: search };
-        break;
-      }
-      case 'group': {
-        query = { userId: req.userId, traded: true };
-        break;
-      }
-      case 'obtained': {
-        query = { obtained: true };
+        query = { ...query, activitys: search };
         break;
       }
       default: {
         query = {
           $and: [
-            { obtained: false },
+            { ...query },
             {
               $or: [
                 { title: { $regex: `.*${search}.*`, $options: 'i' } },

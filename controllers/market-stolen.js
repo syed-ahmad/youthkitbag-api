@@ -4,7 +4,6 @@ const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
   { key: 'recovered', value: 'Recovered' }
 ];
 
@@ -46,34 +45,35 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { recovered: by === 'recovered' };
+  const groupArray = req.inGroups.map(g => g._id);
+
+  let query = {
+    recovered: by === 'recovered',
+    userId: { $ne: req.userId },
+    groups: {
+      $elemMatch: {
+        _id: groupArray,
+        include: true,
+        available: { $lt: new Date() }
+      }
+    }
+  };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = {
-          recovered: false,
-          title: { $regex: `.*${search}.*`, $options: 'i' }
-        };
+        query = { ...query, title: { $regex: `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { recovered: false, activitys: search };
-        break;
-      }
-      case 'group': {
-        query = { userId: req.userId, recovered: true };
-        break;
-      }
-      case 'recovered': {
-        query = { recovered: true };
+        query = { ...query, activitys: search };
         break;
       }
       default: {
         query = {
           $and: [
-            { recovered: false },
+            { ...query },
             {
               $or: [
                 { title: { $regex: `.*${search}.*`, $options: 'i' } },

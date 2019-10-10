@@ -4,7 +4,6 @@ const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
   { key: 'traded', value: 'Traded' }
 ];
 
@@ -40,41 +39,41 @@ exports.getItem = (req, res, next) => {
 
 // GET request trade items based on search/pagination
 exports.getItems = (req, res, next) => {
-  console.log('INGROUPS', req.inGroups);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { traded: by === 'traded' };
+  const groupArray = req.inGroups.map(g => g._id);
+
+  let query = {
+    traded: by === 'traded',
+    userId: { $ne: req.userId },
+    groups: {
+      $elemMatch: {
+        _id: groupArray,
+        include: true,
+        available: { $lt: new Date() }
+      }
+    }
+  };
 
   if (search) {
     search = search.toLowerCase();
     switch (by) {
       case 'title': {
-        query = {
-          traded: false,
-          title: { $regex: `.*${search}.*`, $options: 'i' }
-        };
+        query = { ...query, title: { $regex: `.*${search}.*`, $options: 'i' } };
         break;
       }
       case 'activity': {
-        query = { traded: false, activitys: search };
-        break;
-      }
-      case 'group': {
-        query = { userId: req.userId, traded: true };
-        break;
-      }
-      case 'traded': {
-        query = { userId: req.userId, traded: true };
+        query = { ...query, activitys: search };
         break;
       }
       default: {
         query = {
           $and: [
-            { traded: false },
+            { ...query },
             {
               $or: [
                 { title: { $regex: `.*${search}.*`, $options: 'i' } },
