@@ -10,11 +10,22 @@ const filterOptions = [
 // GET request a stolen item
 exports.getItem = (req, res, next) => {
   const stolenId = req.params.stolenId;
+  const groupArray = req.inGroups.map(g => g._id.toString());
 
   Stolen.findById(stolenId)
     .then(stolen => {
       if (!stolen) {
         const error = new Error('The requested stolen item count not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      const groupCheck = stolen.groups.map(g => g._id.toString());
+      const inItemGroup =
+        groupCheck.filter(g => groupArray.includes(g)).length > 0;
+      if (!inItemGroup) {
+        const error = new Error(
+          'You are not authorised to view the requested stolen item'
+        );
         error.statusCode = 500;
         throw error;
       }

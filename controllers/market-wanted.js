@@ -10,11 +10,22 @@ const filterOptions = [
 // GET request a wanted item
 exports.getItem = (req, res, next) => {
   const wantedId = req.params.wantedId;
+  const groupArray = req.inGroups.map(g => g._id.toString());
 
   Wanted.findById(wantedId)
     .then(wanted => {
       if (!wanted) {
         const error = new Error('The requested wanted item could not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      const groupCheck = wanted.groups.map(g => g._id.toString());
+      const inItemGroup =
+        groupCheck.filter(g => groupArray.includes(g)).length > 0;
+      if (!inItemGroup) {
+        const error = new Error(
+          'You are not authorised to view the requested wanted item'
+        );
         error.statusCode = 500;
         throw error;
       }

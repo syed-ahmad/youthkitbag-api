@@ -10,11 +10,22 @@ const filterOptions = [
 // GET request a trade item
 exports.getItem = (req, res, next) => {
   const tradeId = req.params.tradeId;
+  const groupArray = req.inGroups.map(g => g._id.toString());
 
   Trade.findById(tradeId)
     .then(trade => {
       if (!trade) {
         const error = new Error('The requested trade could not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      const groupCheck = trade.groups.map(g => g._id.toString());
+      const inItemGroup =
+        groupCheck.filter(g => groupArray.includes(g)).length > 0;
+      if (!inItemGroup) {
+        const error = new Error(
+          'You are not authorised to view the requested trade'
+        );
         error.statusCode = 500;
         throw error;
       }
