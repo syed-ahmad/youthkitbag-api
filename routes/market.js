@@ -18,5 +18,11 @@ router.get('/wanted/:wantedId', isAuth, inGroups, wantedController.getItem);
 
 router.get('/stolen', isAuth, inGroups, stolenController.getItems);
 router.get('/stolen/:stolenId', isAuth, inGroups, stolenController.getItem);
+router.post(
+  '/stolen/report/:stolenId',
+  isAuth,
+  inGroups,
+  stolenController.report
+);
 
 module.exports = router;

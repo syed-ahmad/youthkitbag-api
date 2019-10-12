@@ -37,7 +37,10 @@ exports.getItem = (req, res, next) => {
         stolenOn: stolen.stolenOn,
         images: stolen.images,
         activitys: stolen.activitys,
-        security: stolen.security
+        security: stolen.security,
+        reportDetails: stolen.reportDetails.filter(
+          r => r.fromUserId.toString() == req.userId.toString()
+        )
       });
     })
     .catch(err => {
@@ -138,6 +141,43 @@ exports.getItems = (req, res, next) => {
           filterUrl:
             (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// POST request to add a new item into stolen
+exports.report = (req, res, next) => {
+  const stolenId = req.params.stolenId;
+  const { reportedOn, details } = req.body;
+
+  const reportDetails = {
+    reportedOn: reportedOn,
+    fromUserId: req.userId,
+    details: details,
+    accepted: false,
+    legit: true,
+    messages: []
+  };
+
+  Stolen.findById(stolenId)
+    .then(stolen => {
+      if (!stolen) {
+        const error = new Error('The requested stolen item could not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      stolen.reportDetails.push(reportDetails);
+      return stolen.save();
+    })
+    .then(result => {
+      res.status(201).json({
+        message: `Thank you for helping to recover this stolen item "${result.title}".`
       });
     })
     .catch(err => {

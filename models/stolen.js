@@ -90,24 +90,8 @@ const stolenSchema = new Schema(
         },
         messages: [
           {
-            toOwner: {
-              type: Boolean
-            },
-            sentDate: {
-              type: Date
-            },
-            title: {
-              type: String
-            },
-            body: {
-              type: String
-            },
-            draft: {
-              type: Boolean
-            },
-            read: {
-              type: Boolean
-            }
+            type: Schema.Types.ObjectId,
+            ref: 'Message'
           }
         ]
       }
