@@ -60,6 +60,9 @@ const wantedSchema = new Schema(
         },
         available: {
           type: Date
+        },
+        include: {
+          type: Boolean
         }
       }
     ],

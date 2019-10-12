@@ -2,12 +2,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Wanted = require('../models/wanted');
 const User = require('../models/user');
+const { mapGroups } = require('../util/maps');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
   { key: 'obtained', value: 'Obtained' }
 ];
 
@@ -30,7 +30,7 @@ exports.getAdd = (req, res, next) => {
     })
     .then(kit => {
       sourceKit = kit;
-      return User.findById(req.userId);
+      return User.findById(req.userId).populate('profile.groups');
     })
     .then(user => {
       res.status(200).json({
@@ -41,11 +41,7 @@ exports.getAdd = (req, res, next) => {
         location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
-        groups: user.groups
-          ? user.groups.map(g => {
-              g.groupId, g.name, '2019-01-01';
-            })
-          : [],
+        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
         offerDetails: [],
         obtained: false,
         sourceId: sourceKit._id,

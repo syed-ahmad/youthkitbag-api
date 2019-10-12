@@ -64,6 +64,9 @@ const stolenSchema = new Schema(
         },
         available: {
           type: Date
+        },
+        include: {
+          type: Boolean
         }
       }
     ],

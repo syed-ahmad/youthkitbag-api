@@ -2,12 +2,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Trade = require('../models/trade');
 const User = require('../models/user');
+const { mapGroups } = require('../util/maps');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
   { key: 'traded', value: 'Traded' }
 ];
 
@@ -401,47 +401,3 @@ exports.delete = (req, res, next) => {
       next(err);
     });
 };
-
-function mapGroups(profile, activitys, userId) {
-  if (!profile.groups || profile.groups.length === 0) {
-    return [];
-  }
-
-  const groups = profile.groups.map(g => {
-    return {
-      _id: g._id,
-      name: g.name,
-      member: g.members
-        .filter(m => m.user.toString() === userId.toString())
-        .map(m => {
-          return m.permissions.includes('member');
-        }),
-      activity: g.activitys.some(r => activitys.includes(r))
-    };
-  });
-
-  var event = new Date();
-  const today = event
-    .toISOString()
-    .split('T', 1)[0]
-    .concat('T00:00:00.000Z');
-  event.setDate(event.getDate() + 7);
-  const nextweek = event
-    .toISOString()
-    .split('T', 1)[0]
-    .concat('T00:00:00.000Z');
-
-  return groups
-    .filter(g => g.member)
-    .map(g => {
-      return {
-        _id: g._id,
-        name: g.name,
-        available: g.activity ? today : nextweek,
-        include: g.activity
-      };
-    })
-    .sort(function(x, y) {
-      return x.include === y.include ? 0 : x.include ? -1 : 1;
-    });
-}

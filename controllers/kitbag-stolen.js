@@ -2,12 +2,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
 const Stolen = require('../models/stolen');
 const User = require('../models/user');
+const { mapGroups } = require('../util/maps');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
   { key: 'recovered', value: 'Recovered' }
 ];
 
@@ -37,7 +37,7 @@ exports.getAdd = (req, res, next) => {
         throw error;
       }
       sourceKit = kit;
-      return User.findById(req.userId);
+      return User.findById(req.userId).populate('profile.groups');
     })
     .then(user => {
       res.status(200).json({
@@ -50,15 +50,11 @@ exports.getAdd = (req, res, next) => {
         security: sourceKit.security,
         stolenOn: '',
         tracking: '',
+        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
+        reportDetails: [],
         recovered: false,
         sourceId: sourceKit._id,
-        userId: req.userId,
-        groups: user.groups
-          ? user.groups.map(g => {
-              g.groupId, g.name, '';
-            })
-          : [],
-        reportDetails: []
+        userId: req.userId
       });
     })
     .catch(err => {
@@ -80,6 +76,7 @@ exports.add = (req, res, next) => {
     tracking,
     activitys,
     security,
+    groups,
     recovered,
     sourceId
   } = req.body;
@@ -105,6 +102,8 @@ exports.add = (req, res, next) => {
         : [],
     activitys: activitys,
     security: security,
+    groups: groups,
+    reportDetails: [],
     recovered: recovered,
     sourceId: undefined,
     userId: req.userId
@@ -346,6 +345,7 @@ exports.delete = (req, res, next) => {
   const stolenId = req.params.stolenId;
 
   let sourceId;
+  let stolenTitle;
 
   Stolen.findById(stolenId)
     .then(stolen => {
@@ -357,6 +357,7 @@ exports.delete = (req, res, next) => {
         throw error;
       }
       sourceId = stolen.sourceId;
+      stolenTitle = stolen.title;
       return stolen.delete();
     })
     .then(() => {
@@ -393,7 +394,9 @@ exports.delete = (req, res, next) => {
       return;
     })
     .then(() => {
-      res.status(200).json({ message: 'Stolen item deleted' });
+      res.status(201).json({
+        message: `Item reported as stolen "${stolenTitle}" successfully deleted`
+      });
     })
     .catch(err => {
       if (!err.statusCode) {
