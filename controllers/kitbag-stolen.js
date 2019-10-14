@@ -185,6 +185,7 @@ exports.getItem = (req, res, next) => {
   const stolenId = req.params.stolenId;
 
   Stolen.findById(stolenId)
+    .populate('reportDetails.fromUserId', 'profile.username')
     .then(stolen => {
       res.status(200).json(stolen);
     })

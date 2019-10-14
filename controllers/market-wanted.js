@@ -36,7 +36,10 @@ exports.getItem = (req, res, next) => {
         description: wanted.description,
         offerPrice: wanted.offerPrice,
         images: wanted.images,
-        activitys: wanted.activitys
+        activitys: wanted.activitys,
+        offerDetails: wanted.offerDetails.filter(
+          w => w.fromUserId.toString() == req.userId.toString()
+        )
       });
     })
     .catch(err => {
@@ -137,6 +140,44 @@ exports.getItems = (req, res, next) => {
           filterUrl:
             (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// POST request to submit trade offer
+exports.offer = (req, res, next) => {
+  const wantedId = req.params.wantedId;
+  const { offeredOn, details, askingPrice } = req.body;
+
+  const offerDetail = {
+    offeredOn: offeredOn,
+    fromUserId: req.userId,
+    details: details,
+    askingPrice: askingPrice,
+    accepted: false,
+    legit: true,
+    messages: []
+  };
+
+  Wanted.findById(wantedId)
+    .then(wanted => {
+      if (!wanted) {
+        const error = new Error('The requested wanted item could not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      wanted.offerDetails.push(offerDetail);
+      return wanted.save();
+    })
+    .then(result => {
+      res.status(201).json({
+        message: `Thank you. Your offer has been forwarded on this item "${result.title}".`
       });
     })
     .catch(err => {

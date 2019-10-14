@@ -151,12 +151,12 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to add a new item into stolen
+// POST request to report info on a stolen item
 exports.report = (req, res, next) => {
   const stolenId = req.params.stolenId;
   const { reportedOn, details } = req.body;
 
-  const reportDetails = {
+  const reportDetail = {
     reportedOn: reportedOn,
     fromUserId: req.userId,
     details: details,
@@ -172,7 +172,7 @@ exports.report = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-      stolen.reportDetails.push(reportDetails);
+      stolen.reportDetails.push(reportDetail);
       return stolen.save();
     })
     .then(result => {

@@ -158,6 +158,7 @@ exports.getItem = (req, res, next) => {
   const wantedId = req.params.wantedId;
 
   Wanted.findById(wantedId)
+    .populate('offerDetails.fromUserId', 'profile.username')
     .then(wanted => {
       res.status(200).json(wanted);
     })

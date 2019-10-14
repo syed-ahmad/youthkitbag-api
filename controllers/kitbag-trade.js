@@ -183,6 +183,7 @@ exports.getItem = (req, res, next) => {
   const tradeId = req.params.tradeId;
 
   Trade.findById(tradeId)
+    .populate('offerDetails.fromUserId', 'profile.username')
     .then(trade => {
       res.status(200).json(trade);
     })

@@ -72,19 +72,22 @@ const tradeSchema = new Schema(
         }
       }
     ],
-    tradeDetails: [
+    offerDetails: [
       {
-        tradedOn: {
+        offeredOn: {
           type: Date
         },
-        toUserId: {
+        fromUserId: {
           type: Schema.Types.ObjectId,
           ref: 'User'
         },
-        tradePrice: {
+        details: {
+          type: String
+        },
+        offerPrice: {
           type: Number
         },
-        complete: {
+        completed: {
           type: Boolean
         },
         legit: {

@@ -75,6 +75,9 @@ const wantedSchema = new Schema(
           type: Schema.Types.ObjectId,
           ref: 'User'
         },
+        details: {
+          type: String
+        },
         askingPrice: {
           type: Number
         },

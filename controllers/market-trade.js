@@ -37,7 +37,10 @@ exports.getItem = (req, res, next) => {
         condition: trade.condition,
         askingPrice: trade.askingPrice,
         images: trade.images,
-        activitys: trade.activitys
+        activitys: trade.activitys,
+        offerDetails: trade.offerDetails.filter(
+          t => t.fromUserId.toString() == req.userId.toString()
+        )
       });
     })
     .catch(err => {
@@ -138,6 +141,46 @@ exports.getItems = (req, res, next) => {
           filterUrl:
             (by ? `&by=${by}` : '') + (search ? `&search=${search}` : '')
         }
+      });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// POST request to submit trade offer
+exports.offer = (req, res, next) => {
+  const tradeId = req.params.tradeId;
+  const { offeredOn, details, offerPrice } = req.body;
+
+  const offerDetail = {
+    offeredOn: offeredOn,
+    fromUserId: req.userId,
+    details: details,
+    offerPrice: offerPrice,
+    completed: false,
+    legit: true,
+    messages: []
+  };
+
+  console.log('OFFER', offerDetail);
+
+  Trade.findById(tradeId)
+    .then(trade => {
+      if (!trade) {
+        const error = new Error('The requested trade item could not be found');
+        error.statusCode = 500;
+        throw error;
+      }
+      trade.offerDetails.push(offerDetail);
+      return trade.save();
+    })
+    .then(result => {
+      res.status(201).json({
+        message: `Thank you. Your offer has been submitted on this item "${result.title}".`
       });
     })
     .catch(err => {
