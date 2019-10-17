@@ -9,8 +9,7 @@ const userSchema = new Schema(
       required: true
     },
     password: {
-      type: String,
-      required: true
+      type: String
     },
     passwordAttempts: {
       type: Number,
@@ -84,7 +83,10 @@ const userSchema = new Schema(
       }
     },
     resetToken: String,
-    resetTokenExpiration: Date
+    resetTokenExpiration: Date,
+    googleId: String,
+    token: String,
+    tokenExpiration: Date
   },
   { timestamps: true }
 );

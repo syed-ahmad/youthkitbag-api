@@ -251,3 +251,51 @@ exports.postNewPassword = (req, res, next) => {
       next(err);
     });
 };
+exports.authenticate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error(VALIDATION_FAILED);
+    error.statusCode = 422;
+    error.errors = errors.array();
+    throw error;
+  }
+
+  const token = req.body.token;
+
+  User.findOne({
+    token: token,
+    tokenExpiration: { $gt: Date.now() }
+  })
+    .then(user => {
+      if (!user) {
+        const error = new Error(INVALID_CREDENTIALS);
+        error.statusCode = 401;
+        throw error;
+      }
+      if (user.locked) {
+        const error = new Error(ACCOUNT_LOCKED);
+        error.statusCode = 401;
+        throw error;
+      }
+      user.token = undefined;
+      user.tokenExpiration = undefined;
+      return user.save();
+    })
+    .then(user => {
+      const token = jwt.sign(
+        {
+          email: user.email,
+          userId: user._id.toString()
+        },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      res.status(200).json({ token: token, userId: user._id.toString() });
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};

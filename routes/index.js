@@ -13,6 +13,7 @@ const marketRoutes = require('./market');
 const imageRoutes = require('./image');
 const groupRoutes = require('./group');
 const authRoutes = require('./auth');
+const authGoogleRoutes = require('./auth-google');
 
 const router = express.Router();
 
@@ -28,5 +29,6 @@ router.use('/image', isAuth, imageRoutes);
 router.use('/group', isAuth, groupRoutes);
 
 router.use('/auth', authRoutes);
+router.use('/auth/google', authGoogleRoutes);
 
 module.exports = router;

@@ -62,3 +62,10 @@ exports.newPasswordValidation = [
     .isLength({ min: 5 })
     .withMessage('Password must be at least 5 characters')
 ];
+
+exports.tokenValidation = [
+  check('token')
+    .not()
+    .isEmpty()
+    .withMessage('A valid token is required')
+];
