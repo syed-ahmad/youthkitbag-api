@@ -85,6 +85,7 @@ const userSchema = new Schema(
     resetToken: String,
     resetTokenExpiration: Date,
     googleId: String,
+    facebookId: String,
     token: String,
     tokenExpiration: Date
   },
