@@ -28,11 +28,12 @@ passport.use(
         .then(numberOfItems => {
           if (numberOfItems > 1) {
             // Woah!!! Two accounts exist. How is this possible? If it is throw exception to user and ask to contact admin
-            done(
-              null,
-              false,
-              `More than one account is associated with this Google account [id=${sub}/email=${email}]. Please contact the YouthKitbag administrator.`
+            console.log(
+              'Woah!!! Two accounts exist. How is this possible? If it is throw exception to user and ask to contact admin'
             );
+            done(null, false, {
+              message: `More than one account is associated with this Google account [id=${sub}/email=${email}]. Please contact the YouthKitbag administrator.`
+            });
           }
           if (numberOfItems === 1) {
             // Account exists, check if email and google account are linked - if not, then update
@@ -41,14 +42,25 @@ passport.use(
                 if (existingUser) {
                   if (!existingUser.googleId) {
                     existingUser.googleId = sub;
+                  }
+                  if (!existingUser.profile.firstname) {
                     existingUser.profile.firstname = given_name;
+                  }
+                  if (!existingUser.profile.lastname) {
                     existingUser.profile.lastname = family_name;
+                  }
+                  if (!existingUser.profile.username) {
                     existingUser.profile.username = name;
-                    existingUser.profile.images = [
-                      {
-                        imageUrl: picture
-                      }
-                    ];
+                  }
+                  if (!existingUser.profile.images) {
+                    existingUser.profile.images = [];
+                  }
+                  if (
+                    existingUser.profile.images.filter(
+                      i => i.imageUrl === picture
+                    ).length === 0
+                  ) {
+                    existingUser.profile.images.unshift({ imageUrl: picture });
                   }
                   existingUser.token = accessToken;
                   existingUser.tokenExpiration = Date.now() + 10000;
@@ -117,7 +129,6 @@ router.get(
     session: false
   }),
   (req, res) => {
-    //console.log('REQ ON CALLBACK', req.user);
     var token = req.user.token;
     res.redirect(`${clientUrl}/auth/token/${token}`);
   }

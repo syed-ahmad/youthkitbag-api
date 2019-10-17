@@ -46,7 +46,9 @@ exports.editProfile = (req, res, next) => {
   const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   imagesToDelete.forEach(i => {
-    awsHelper.deleteImage(i.image);
+    if (i.image) {
+      awsHelper.deleteImage(i.image);
+    }
   });
 
   User.findById(userId)
