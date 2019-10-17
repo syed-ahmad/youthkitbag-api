@@ -49,12 +49,9 @@ const userSchema = new Schema(
       ],
       images: [
         {
-          image: {
-            type: String
-          },
-          imageUrl: {
-            type: String
-          }
+          image: String,
+          imageUrl: String,
+          source: String
         }
       ],
       activitys: [String],

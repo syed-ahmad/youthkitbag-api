@@ -57,10 +57,13 @@ passport.use(
                   }
                   if (
                     existingUser.profile.images.filter(
-                      i => i.imageUrl === picture
+                      i => i.source === 'google'
                     ).length === 0
                   ) {
-                    existingUser.profile.images.unshift({ imageUrl: picture });
+                    existingUser.profile.images.unshift({
+                      imageUrl: picture,
+                      source: 'google'
+                    });
                   }
                   existingUser.token = accessToken;
                   existingUser.tokenExpiration = Date.now() + 10000;
@@ -90,7 +93,8 @@ passport.use(
                 groups: [],
                 images: [
                   {
-                    imageUrl: picture
+                    imageUrl: picture,
+                    source: 'google'
                   }
                 ]
               },

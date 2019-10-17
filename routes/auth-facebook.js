@@ -22,11 +22,6 @@ passport.use(
       ]
     },
     (accessToken, refreshToken, profile, done) => {
-      // console.log('ACCESS', accessToken);
-      // console.log('REFRESH', refreshToken);
-      // console.log('PROFILE', profile);
-      // console.log('DONE', done);
-
       const { id, name, first_name, last_name, email } = profile._json;
       const picture = profile.photos ? profile.photos[0].value : undefined;
 
@@ -64,10 +59,13 @@ passport.use(
                   }
                   if (
                     existingUser.profile.images.filter(
-                      i => i.imageUrl === picture
+                      i => i.source === 'facebook'
                     ).length === 0
                   ) {
-                    existingUser.profile.images.unshift({ imageUrl: picture });
+                    existingUser.profile.images.unshift({
+                      imageUrl: picture,
+                      source: 'facebook'
+                    });
                   }
                   existingUser.token = accessToken;
                   existingUser.tokenExpiration = Date.now() + 10000;
@@ -97,7 +95,8 @@ passport.use(
                 groups: [],
                 images: [
                   {
-                    imageUrl: picture
+                    imageUrl: picture,
+                    source: 'facebook'
                   }
                 ]
               },
