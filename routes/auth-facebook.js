@@ -1,7 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
-const User = require('../models/user');
+const { authenticateThirdParty } = require('../controllers/auth');
 
 const router = express.Router();
 const clientUrl = process.env.CLIENT_URL;
@@ -25,102 +25,26 @@ passport.use(
       const { id, name, first_name, last_name, email } = profile._json;
       const picture = profile.photos ? profile.photos[0].value : undefined;
 
-      User.find({ $or: [{ facebookId: id }, { email: email }] })
-        .countDocuments()
-        .then(numberOfItems => {
-          if (numberOfItems > 1) {
-            // Woah!!! Two accounts exist. How is this possible? If it is throw exception to user and ask to contact admin
-            console.log(
-              'Woah!!! Two accounts exist. How is this possible? If it is throw exception to user and ask to contact admin'
-            );
-            done(null, false, {
-              message: `More than one account is associated with this Facebook account [id=${id}/email=${email}]. Please contact the YouthKitbag administrator.`
-            });
-          }
-          if (numberOfItems === 1) {
-            // Account exists, check if email and facebook account are linked - if not, then update
-            User.findOne({ $or: [{ facebookId: id }, { email: email }] })
-              .then(existingUser => {
-                if (existingUser) {
-                  if (!existingUser.facebookId) {
-                    existingUser.facebookId = id;
-                  }
-                  if (!existingUser.profile.firstname) {
-                    existingUser.profile.firstname = first_name;
-                  }
-                  if (!existingUser.profile.lastname) {
-                    existingUser.profile.lastname = last_name;
-                  }
-                  if (!existingUser.profile.username) {
-                    existingUser.profile.username = name;
-                  }
-                  if (!existingUser.profile.images) {
-                    existingUser.profile.images = [];
-                  }
-                  if (
-                    existingUser.profile.images.filter(
-                      i => i.source === 'facebook'
-                    ).length === 0
-                  ) {
-                    existingUser.profile.images.unshift({
-                      imageUrl: picture,
-                      source: 'facebook'
-                    });
-                  }
-                  existingUser.token = accessToken;
-                  existingUser.tokenExpiration = Date.now() + 10000;
-                  existingUser
-                    .save()
-                    .then(user =>
-                      done(null, {
-                        token: user.token
-                      })
-                    )
-                    .catch(err => {
-                      done(err);
-                    });
-                }
-              })
-              .catch(err => done(err));
-          }
-          if (numberOfItems === 0) {
-            // Account does not exist, so create a new account
-            const newUser = {
-              email: email,
-              facebookId: id,
-              profile: {
-                firstname: first_name,
-                lastname: last_name,
-                username: name,
-                groups: [],
-                images: [
-                  {
-                    imageUrl: picture,
-                    source: 'facebook'
-                  }
-                ]
-              },
-              token: accessToken,
-              tokenExpiration: Date.now() + 10000
-            };
-            new User(newUser)
-              .save()
-              .then(user =>
-                done(null, {
-                  token: user.token
-                })
-              )
-              .catch(err => {
-                done(err);
-              });
-          }
-        })
-        .catch(err => done(err));
+      const thirdparty = {
+        appname: 'facebook',
+        id: id,
+        name: name,
+        firstname: first_name,
+        lastname: last_name,
+        email: email,
+        picture: picture,
+        accessToken: accessToken
+      };
+
+      authenticateThirdParty(thirdparty, done);
     }
   )
 );
 
-router.get('', passport.authenticate('facebook', { scope: ['email'] }));
+router.get(
+  '',
+  passport.authenticate('facebook', { session: false, scope: ['email'] })
+);
 
 router.get(
   '/callback',
@@ -129,7 +53,6 @@ router.get(
     session: false
   }),
   (req, res) => {
-    console.log('USER', req.user);
     var token = req.user.token;
     res.redirect(`${clientUrl}/auth/token/${token}`);
   }

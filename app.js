@@ -15,6 +15,7 @@ const MONGODB_URI = process.env.MONGODB_URL;
 
 const app = express();
 
+// This is to handle a Heroku issue where it doesn't indicate to third parties that it is using a secure channel
 app.enable('trust proxy');
 
 aws.config.update({

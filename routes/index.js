@@ -15,6 +15,7 @@ const groupRoutes = require('./group');
 const authRoutes = require('./auth');
 const authGoogleRoutes = require('./auth-google');
 const authFacebookRoutes = require('./auth-facebook');
+const authGitHubRoutes = require('./auth-github');
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.use('/group', isAuth, groupRoutes);
 
 router.use('/auth/google', authGoogleRoutes);
 router.use('/auth/facebook', authFacebookRoutes);
+router.use('/auth/github', authGitHubRoutes);
 router.use('/auth', authRoutes);
 
 module.exports = router;

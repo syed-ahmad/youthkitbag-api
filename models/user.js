@@ -81,8 +81,12 @@ const userSchema = new Schema(
     },
     resetToken: String,
     resetTokenExpiration: Date,
-    googleId: String,
-    facebookId: String,
+    thirdpartyAuth: [
+      {
+        name: String,
+        id: String
+      }
+    ],
     token: String,
     tokenExpiration: Date
   },

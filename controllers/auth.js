@@ -251,6 +251,7 @@ exports.postNewPassword = (req, res, next) => {
       next(err);
     });
 };
+
 exports.authenticate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -298,4 +299,113 @@ exports.authenticate = (req, res, next) => {
       }
       next(err);
     });
+};
+
+exports.authenticateThirdParty = (thirdparty, done) => {
+  User.find({
+    $or: [{ 'thirdpartyAuth.id': thirdparty.id }, { email: thirdparty.email }]
+  })
+    .countDocuments()
+    .then(numberOfItems => {
+      if (numberOfItems > 1) {
+        done(null, false, {
+          message: `More than one account is associated with this third party account [id=${thirdparty.id}/email=${thirdparty.email}]. Please contact the YouthKitbag administrator.`
+        });
+      }
+      if (numberOfItems === 1) {
+        // Account exists, check if email and thirdparty account are linked - if not, then update
+        User.findOne({
+          $or: [
+            { 'thirdpartyAuth.id': thirdparty.id },
+            { email: thirdparty.email }
+          ]
+        })
+          .then(existingUser => {
+            if (existingUser) {
+              if (
+                existingUser.thirdpartyAuth.filter(
+                  t => t.name === thirdparty.appname
+                ).length === 0
+              ) {
+                existingUser.thirdpartyAuth.push({
+                  name: thirdparty.appname,
+                  id: thirdparty.id
+                });
+              }
+              if (!existingUser.profile.firstname) {
+                existingUser.profile.firstname = thirdparty.firstname;
+              }
+              if (!existingUser.profile.lastname) {
+                existingUser.profile.lastname = thirdparty.lastname;
+              }
+              if (!existingUser.profile.username) {
+                existingUser.profile.username = thirdparty.name;
+              }
+              if (!existingUser.profile.images) {
+                existingUser.profile.images = [];
+              }
+              if (
+                existingUser.profile.images.filter(
+                  i => i.source === thirdparty.appname
+                ).length === 0
+              ) {
+                existingUser.profile.images.unshift({
+                  imageUrl: thirdparty.picture,
+                  source: thirdparty.appname
+                });
+              }
+              existingUser.token = thirdparty.accessToken;
+              existingUser.tokenExpiration = Date.now() + 10000;
+              existingUser
+                .save()
+                .then(user =>
+                  done(null, {
+                    token: user.token
+                  })
+                )
+                .catch(err => {
+                  done(err);
+                });
+            }
+          })
+          .catch(err => done(err));
+      }
+      if (numberOfItems === 0) {
+        // Account does not exist, so create a new account
+        const newUser = {
+          email: thirdparty.email,
+          profile: {
+            firstname: thirdparty.firstname,
+            lastname: thirdparty.lastname,
+            username: thirdparty.name,
+            groups: [],
+            images: [
+              {
+                imageUrl: thirdparty.picture,
+                source: thirdparty.appname
+              }
+            ]
+          },
+          thirdpartyAuth: [
+            {
+              name: thirdparty.appname,
+              id: thirdparty.id
+            }
+          ],
+          token: thirdparty.accessToken,
+          tokenExpiration: Date.now() + 10000
+        };
+        new User(newUser)
+          .save()
+          .then(user =>
+            done(null, {
+              token: user.token
+            })
+          )
+          .catch(err => {
+            done(err);
+          });
+      }
+    })
+    .catch(err => done(err));
 };
