@@ -15,9 +15,6 @@ passport.use(
       scope: 'user:email'
     },
     (accessToken, refreshToken, profile, done) => {
-      // console.log('ACCESS', accessToken);
-      // console.log('REFRESH', refreshToken);
-      // console.log('PROFILE', profile);
       const { id, name, avatar_url } = profile._json;
       const email = profile.emails ? profile.emails[0].value : undefined;
 
@@ -32,7 +29,6 @@ passport.use(
         accessToken: accessToken
       };
 
-      // console.log('3RDPARTY', thirdparty);
       authenticateThirdParty(thirdparty, done);
     }
   )
