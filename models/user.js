@@ -9,8 +9,7 @@ const userSchema = new Schema(
       required: true
     },
     password: {
-      type: String,
-      required: true
+      type: String
     },
     passwordAttempts: {
       type: Number,
@@ -22,13 +21,16 @@ const userSchema = new Schema(
     },
     profile: {
       firstname: {
-        type: String
+        type: String,
+        default: ''
       },
       lastname: {
-        type: String
+        type: String,
+        default: ''
       },
       username: {
-        type: String
+        type: String,
+        default: ''
       },
       location: {
         type: {
@@ -47,12 +49,9 @@ const userSchema = new Schema(
       ],
       images: [
         {
-          image: {
-            type: String
-          },
-          imageUrl: {
-            type: String
-          }
+          image: String,
+          imageUrl: String,
+          source: String
         }
       ],
       activitys: [String],
@@ -63,25 +62,29 @@ const userSchema = new Schema(
       icon: { type: String, default: 'coffee' },
       max: {
         kit: { type: Number, default: 20 },
-        trade: { type: Number, default: 5 },
-        wanted: { type: Number, default: 5 },
-        stolen: { type: Number, default: 30 },
-        photos: { type: Number, default: 2 },
+        market: { type: Number, default: 10 },
+        photos: { type: Number, default: 50 },
         groups: { type: Number, default: 3 },
-        groupadmins: { type: Number, default: 2 }
+        groupadmins: { type: Number, default: 1 }
       },
       size: {
         kit: { type: Number, default: 0 },
-        trade: { type: Number, default: 0 },
-        wanted: { type: Number, default: 0 },
-        stolen: { type: Number, default: 0 },
+        market: { type: Number, default: 0 },
         photos: { type: Number, default: 0 },
         groups: { type: Number, default: 0 },
         groupadmins: { type: Number, default: 0 }
       }
     },
     resetToken: String,
-    resetTokenExpiration: Date
+    resetTokenExpiration: Date,
+    thirdpartyAuth: [
+      {
+        name: String,
+        id: String
+      }
+    ],
+    token: String,
+    tokenExpiration: Date
   },
   { timestamps: true }
 );

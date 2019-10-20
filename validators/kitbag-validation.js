@@ -2,7 +2,8 @@ const { body } = require('express-validator');
 const {
   commaToArray,
   caseTagFormat,
-  lowTagFormat
+  lowTagFormat,
+  dateFormat
 } = require('../util/sanitizer');
 
 exports.kitbagValidation = [
@@ -22,10 +23,7 @@ exports.kitValidation = [
   body('security.*').customSanitizer(caseTagFormat),
   body('purchases.*.from').trim(),
   body('purchases.*.quantity').toInt(),
-  body('purchases.*.ondate')
-    .optional({ checkFalsy: true })
-    .isISO8601()
-    .toDate(),
+  body('purchases.*.ondate').customSanitizer(dateFormat),
   body('purchases.*.price').toFloat(),
   body('inbag.*.location').trim(),
   body('inbag.*.quantity').toInt(),
@@ -37,27 +35,30 @@ exports.kitValidation = [
   body('tracking').trim()
 ];
 
-exports.tradeValidation = [
-  body(
-    'askingPrice',
-    'Please enter a valid amount. It can be zero, if you want to give this item away for free'
-  )
-    .toFloat()
-    .isFloat({ min: 0, max: 99999.99 })
+exports.marketValidation = [
+  // body(
+  //   'marketPrice',
+  //   'Please enter a valid amount. It can be zero, if you want to give this item away for free'
+  // )
+  //   .toFloat()
+  //   .isFloat({ min: 0, max: 99999.99 })
 ];
 
-exports.wantedValidation = [
-  body(
-    'offerPrice',
-    'Please enter a valid amount. It can be zero, if you only want to receive free offers'
-  )
-    .toFloat()
-    .isFloat({ min: 0, max: 99999.99 })
-];
+// exports.wantedValidation = [
+//   body(
+//     'responsePrice',
+//     'Please enter a valid amount. It can be zero, if you only want to receive free responseDetails'
+//   )
+//     .toFloat()
+//     .isFloat({ min: 0, max: 99999.99 })
+// ];
 
-exports.stolenValidation = [
-  body('security').customSanitizer(commaToArray),
-  body('security.*').customSanitizer(caseTagFormat),
-  //body('stolenOn', 'Please specify the date the item was stolen').isISO8601().toDate(),
-  body('tracking').trim()
-];
+// exports.stolenValidation = [
+//   body('security').customSanitizer(commaToArray),
+//   body('security.*').customSanitizer(caseTagFormat),
+//   body(
+//     'stolenOn',
+//     'Please specify the date the item was stolen'
+//   ).customSanitizer(dateFormat),
+//   body('tracking').trim()
+// ];

@@ -1,7 +1,6 @@
 const Kit = require('../models/kit');
 const User = require('../models/user');
 const awsHelper = require('../util/aws-helper');
-require('../util/date-helper');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
@@ -9,7 +8,7 @@ const filterOptions = [
   { key: 'activity', value: 'Activity' },
   { key: 'tag', value: 'Tag' },
   { key: 'container', value: 'Container' },
-  { key: 'inactive', value: 'All Inactive' }
+  { key: 'inactive', value: 'Inactive' }
 ];
 
 // POST request to add a new item into kitbag

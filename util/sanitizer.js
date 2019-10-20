@@ -21,3 +21,43 @@ exports.lowTagFormat = value =>
     .toLowerCase();
 
 exports.lower = value => value.toLowerCase();
+
+exports.dateFormat = value => {
+  function padZero(value, size) {
+    const s = '00000' + value;
+    return s.substr(s.length - size);
+  }
+
+  function fixYear(value) {
+    const y = +value;
+    if (y < 25) {
+      return y + 2000;
+    } else if (y < 100) {
+      return y + 1900;
+    }
+    return y;
+  }
+
+  const noDate = '';
+
+  if (!value) return noDate;
+
+  if (value.startsWith('-')) return noDate;
+
+  const dateTime = value.split('T');
+  const date = dateTime[0].split('-');
+
+  if (
+    !date[0] ||
+    !date[1] ||
+    !date[2] ||
+    date[0] === '0' ||
+    date[1] === '0' ||
+    date[2] === '0'
+  )
+    return noDate;
+
+  return `${fixYear(date[0])}-${padZero(date[1], 2)}-${padZero(date[2], 2)}T${
+    dateTime[1]
+  }`;
+};

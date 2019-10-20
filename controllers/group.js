@@ -3,12 +3,6 @@ const User = require('../models/user');
 const awsHelper = require('../util/aws-helper');
 const { getPagination } = require('../util/list-helper');
 
-const filterOptions = [
-  { key: 'all', value: 'All' },
-  { key: 'name', value: 'Name' },
-  { key: 'activity', value: 'Activity' }
-];
-
 // POST request to add a new group for status
 exports.add = (req, res, next) => {
   const {
@@ -54,7 +48,7 @@ exports.add = (req, res, next) => {
     user: req.userId,
     state: 'approved',
     stateAt: Date.now(),
-    permission: ['member', 'admin']
+    permissions: ['member', 'admin']
   };
   group.members.push(member);
 
@@ -143,7 +137,7 @@ exports.editMemberState = (req, res, next) => {
         if (m.state !== state) {
           m.state = state;
           m.stateAt = Date.now();
-          m.permission =
+          m.permissions =
             state === 'suspended' || state === 'rejected' ? [] : ['member'];
           updated = true;
         }
@@ -175,7 +169,7 @@ exports.joinMember = (req, res, next) => {
     user: req.userId,
     state: 'requested',
     stateAt: Date.now(),
-    permission: []
+    permissions: []
   };
 
   let groupName;
@@ -221,11 +215,11 @@ exports.leaveMember = (req, res, next) => {
         throw error;
       }
       const members = group.members.map(m => {
-        if (m._id !== req.userId) return m;
+        if (m.user._id.toString() !== req.userId.toString()) return m;
         if (m.state !== 'left') {
           m.state = 'left';
           m.stateAt = Date.now();
-          m.permission = [];
+          m.permissions = [];
           updated = true;
         }
         return m;
@@ -298,23 +292,63 @@ exports.getItems = (req, res, next) => {
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = {};
+  let query = req.appAdmin
+    ? {}
+    : {
+        $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+      };
+
+  if (by === 'requested' && !req.appAdmin) {
+    by = '';
+  }
 
   if (search || by) {
     search = search ? search.toLowerCase() : '';
     switch (by) {
       case 'name': {
-        query = { name: { $regex: `.*${search}.*`, $options: 'i' } };
+        query = {
+          $and: [
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
+            { name: { $regex: `.*${search}.*`, $options: 'i' } }
+          ]
+        };
         break;
       }
       case 'activity': {
-        query = { activitys: search };
+        query = {
+          $and: [
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
+            { activitys: search }
+          ]
+        };
+        break;
+      }
+      case 'requested': {
+        query = {
+          $and: [
+            {
+              status: { $eq: 'requested' }
+            },
+            {
+              $or: [
+                { name: { $regex: `.*${search}.*`, $options: 'i' } },
+                { activitys: search }
+              ]
+            }
+          ]
+        };
         break;
       }
       default: {
         query = {
           $and: [
-            { status: { $ne: 'blocked' } },
+            {
+              $or: [{ status: { $eq: 'approved' } }, { admin: req.userId }]
+            },
             {
               $or: [
                 { name: { $regex: `.*${search}.*`, $options: 'i' } },
@@ -328,8 +362,20 @@ exports.getItems = (req, res, next) => {
     }
   }
 
-  let orderby = { updatedAt: -1 };
+  const filterOptions = req.appAdmin
+    ? [
+        { key: 'all', value: 'All' },
+        { key: 'name', value: 'Name' },
+        { key: 'activity', value: 'Activity' },
+        { key: 'requested', value: 'Requested' }
+      ]
+    : [
+        { key: 'all', value: 'All' },
+        { key: 'name', value: 'Name' },
+        { key: 'activity', value: 'Activity' }
+      ];
 
+  let orderby = { updatedAt: -1 };
   Group.find(query)
     .countDocuments()
     .then(numberOfItems => {
@@ -403,7 +449,7 @@ function mapGroups(groups, req) {
     ng.status = g.status;
     ng.activitys = g.activitys;
     ng.images = g.images;
-    ng.memberCount = g.members.length;
+    ng.memberCount = g.members.filter(m => m.state !== 'left').length;
     ng.appAdmin = req.userId.toString() === process.env.ADMIN_USER;
     return ng;
   });
@@ -422,6 +468,7 @@ function mapGroup(group, req, incAdmin) {
     activitys: group.activitys,
     status: group.status,
     readonly: true,
+    groupMemberState: req.groupMemberState,
     groupMember: req.groupMember,
     groupAdmin: req.groupAdmin,
     appAdmin: req.appAdmin,
@@ -439,7 +486,7 @@ function mapMembers(group, req) {
       rm.state = m.state;
       rm.stateAt = m.stateAt;
       rm.comment = m.comment;
-      rm.permission = m.permission;
+      rm.permissions = m.permissions;
       rm.user = mapUser(m.user);
       return rm;
     }),
@@ -455,6 +502,6 @@ function mapUser(user) {
     username: user.profile.username,
     firstname: user.profile.firstname,
     lastname: user.profile.lastname,
-    imageUrl: user.profile.imageUrl
+    images: user.profile.images
   };
 }

@@ -1,21 +1,21 @@
 const express = require('express');
-const tradeController = require('../controllers/market-trade');
-const wantedController = require('../controllers/market-wanted');
-const stolenController = require('../controllers/market-stolen');
 const marketController = require('../controllers/market');
+// const checkValidationResult = require('../middleware/check-validation-result');
+// const {
+//   marketValidation,
+//   marketValidation,
+//   wantedValidation,
+//   stolenValidation
+// } = require('../validators/market-validation');
 const isAuth = require('../middleware/is-auth');
+const inGroups = require('../middleware/in-groups');
 
 const router = express.Router();
 
 router.post('/create-message', isAuth, marketController.createMessage);
 
-router.get('/trade', tradeController.getItems);
-router.get('/trade/:tradeId', isAuth, tradeController.getItem);
-
-router.get('/wanted', wantedController.getItems);
-router.get('/wanted/:wantedId', isAuth, wantedController.getItem);
-
-router.get('/stolen', stolenController.getItems);
-router.get('/stolen/:stolenId', isAuth, stolenController.getItem);
+router.get('', isAuth, inGroups, marketController.getItems);
+router.get('/:marketId', isAuth, inGroups, marketController.getItem);
+router.post('/respond/:marketId', isAuth, inGroups, marketController.respond);
 
 module.exports = router;

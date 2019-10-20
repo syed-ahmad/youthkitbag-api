@@ -2,47 +2,39 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const tradeSchema = new Schema(
+const marketSchema = new Schema(
   {
     title: {
       type: String,
       required: true
     },
-    subtitle: {
-      type: String
+    marketType: {
+      type: String,
+      required: true
     },
-    description: {
-      type: String
-    },
+    subtitle: String,
+    description: String,
     location: {
       type: {
         type: String,
         enum: ['Point']
       },
-      coordinates: {
-        type: [Number]
-      }
+      coordinates: [Number]
     },
     images: [
       {
-        image: {
-          type: String
-        },
-        imageUrl: {
-          type: String
-        }
+        image: String,
+        imageUrl: String
       }
     ],
     activitys: [String],
-    condition: {
-      type: String
-    },
-    askingPrice: {
-      type: Number
-    },
-    traded: {
-      type: Boolean
-    },
+    condition: String,
+    security: [String],
+    tracking: String,
+    occurredOn: Date,
+    freeTrade: Boolean,
+    marketPrice: Number,
+    completed: Boolean,
     sourceId: {
       type: Schema.Types.ObjectId,
       ref: 'Kit'
@@ -58,32 +50,22 @@ const tradeSchema = new Schema(
           type: Schema.Types.ObjectId,
           ref: 'Group'
         },
-        name: {
-          type: String
-        },
-        available: {
-          type: Date
-        }
+        name: String,
+        available: Date,
+        include: Boolean
       }
     ],
-    tradeDetails: [
+    responseDetails: [
       {
-        tradedOn: {
-          type: Date
-        },
-        toUserId: {
+        responseOn: Date,
+        fromUserId: {
           type: Schema.Types.ObjectId,
           ref: 'User'
         },
-        tradePrice: {
-          type: Number
-        },
-        complete: {
-          type: Boolean
-        },
-        legit: {
-          type: Boolean
-        },
+        details: String,
+        responsePrice: Number,
+        accepted: Boolean,
+        legit: Boolean,
         messages: [
           {
             type: Schema.Types.ObjectId,
@@ -96,4 +78,4 @@ const tradeSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Trade', tradeSchema);
+module.exports = mongoose.model('Market', marketSchema);

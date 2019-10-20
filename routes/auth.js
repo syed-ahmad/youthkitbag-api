@@ -4,7 +4,8 @@ const {
   signupValidation,
   loginValidation,
   resetValidation,
-  newPasswordValidation
+  newPasswordValidation,
+  tokenValidation
 } = require('../validators/auth-validation');
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post(
   newPasswordValidation,
   authController.postNewPassword
 );
+router.post('/authenticate', tokenValidation, authController.authenticate);
 
 module.exports = router;

@@ -15,6 +15,9 @@ const MONGODB_URI = process.env.MONGODB_URL;
 
 const app = express();
 
+// This is to handle a Heroku issue where it doesn't indicate to third parties that it is using a secure channel
+app.enable('trust proxy');
+
 aws.config.update({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -78,8 +81,9 @@ const corsOptions = {
 
 app.use('/', cors(corsOptions), rootRoutes);
 
-app.use((error, req, res) => {
-  console.log('ERROR', error);
+// 4-params signature required to force it to use error handling
+// eslint-disable-next-line no-unused-vars
+app.use((error, req, res, next) => {
   const status = error.statusCode || 400;
   const message = error.message;
   const errors = error.errors || [];

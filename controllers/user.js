@@ -1,12 +1,26 @@
 const User = require('../models/user');
+const awsHelper = require('../util/aws-helper');
 
 exports.getUser = (req, res, next) => {
   const userId = req.params.userId;
 
   User.findById(userId)
+    .populate('profile.groups', 'name images members')
     .then(user => {
+      const groups = user.profile.groups.map(g => {
+        return {
+          _id: g._id,
+          images: g.images,
+          name: g.name,
+          members: g.members
+            .filter(m => m.user.toString() === userId.toString())
+            .map(m => {
+              return { state: m.state, permissions: m.permissions };
+            })
+        };
+      });
       res.status(200).json({
-        profile: { ...user.profile, _id: user._id },
+        profile: { ...user.profile, _id: user._id, groups: groups },
         package: user.package,
         email: user.email
       });
@@ -21,12 +35,10 @@ exports.getUser = (req, res, next) => {
 
 // PUT request to save edited changes to existing item in kitbag
 exports.editProfile = (req, res, next) => {
-  console.log('EDIT', req.params, req.body);
   const userId = req.params.userId;
-  const { firstname, lastname, username, location, activitys } = req.body;
+  const { firstname, lastname, username, activitys } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
-  //TDDO: Must fix images saved for user
   const images = activeImages.map(i => {
     return { ...i, state: 'A' };
   });
@@ -34,7 +46,9 @@ exports.editProfile = (req, res, next) => {
   const imagesToDelete = req.body.images.filter(i => i.state === 'D');
 
   imagesToDelete.forEach(i => {
-    awsHelper.deleteImage(i.image);
+    if (i.image) {
+      awsHelper.deleteImage(i.image);
+    }
   });
 
   User.findById(userId)
@@ -42,17 +56,13 @@ exports.editProfile = (req, res, next) => {
       user.profile.firstname = firstname;
       user.profile.lastname = lastname;
       user.profile.username = username;
-      user.profile.location = location;
       user.profile.activitys = activitys;
-      console.log('USER B4', user);
+      user.profile.images = images;
       return user.save();
     })
-    .then(result => {
-      const profile = { ...result.profile, _id: result._id };
-      console.log('PROF', profile);
+    .then(() => {
       res.status(201).json({
-        message: `User profile successfully updated.`,
-        profile: profile
+        message: `User profile successfully updated.`
       });
     })
     .catch(err => {

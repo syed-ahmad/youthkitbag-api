@@ -1,27 +1,28 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
-const Trade = require('../models/trade');
+const Market = require('../models/market');
 const User = require('../models/user');
+const { mapGroups } = require('../util/maps');
 
 const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'group', value: 'Group' },
-  { key: 'traded', value: 'All Traded' }
+  { key: 'completed', value: 'Completed' }
 ];
 
-// GET request to return kit item as item for trade
+// GET request to return kit item as item for market
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
+  const marketType = req.params.marketType;
 
   let sourceKit;
 
-  Trade.findOne({ sourceId: new ObjectId(kitId) })
-    .then(currentTrade => {
-      if (currentTrade && !currentTrade.traded) {
+  Market.findOne({ sourceId: new ObjectId(kitId), marketType: marketType })
+    .then(currentMarket => {
+      if (currentMarket && !currentMarket.completed) {
         const error = new Error(
-          'The requested item of kit is already listed for trade'
+          `The requested item of kit is already actively listed as ${marketType} on the market place`
         );
         error.statusCode = 500;
         throw error;
@@ -31,34 +32,35 @@ exports.getAdd = (req, res, next) => {
     .then(kit => {
       if (kit.status !== 'owned') {
         const error = new Error(
-          'Item in kitbag does not have status of Owned, and therefore cannot be listed for trade'
+          'Item in kitbag does not have status of Owned, and therefore cannot be listed on the market place'
         );
         error.statusCode = 500;
         throw error;
       }
       sourceKit = kit;
-      return User.findById(req.userId);
+      return User.findById(req.userId).populate('profile.groups');
     })
     .then(user => {
       res.status(200).json({
         title: sourceKit.title,
+        marketType: marketType,
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
-        condition:
-          sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
-        askingPrice: 0.0,
         location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
-        groups: user.groups
-          ? user.groups.map(g => {
-              g.groupId, g.name, '2019-01-01';
-            })
-          : [],
-        tradeDetails: [],
-        traded: false,
+        condition:
+          sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
+        security: sourceKit.security,
+        tracking: '',
+        occurredOn: new Date(),
+        freeTrade: false,
+        marketPrice: 0.0,
+        completed: false,
         sourceId: sourceKit._id,
-        userId: req.userId
+        userId: req.userId,
+        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
+        responseDetails: []
       });
     })
     .catch(err => {
@@ -69,19 +71,24 @@ exports.getAdd = (req, res, next) => {
     });
 };
 
-// POST request to add a new item into trade
+// POST request to add a new item into market
 exports.add = (req, res, next) => {
   const {
     title,
+    marketType,
     subtitle,
     description,
-    condition,
-    askingPrice,
     location,
     activitys,
-    groups,
-    traded,
-    sourceId
+    condition,
+    security,
+    tracking,
+    occurredOn,
+    freeTrade,
+    marketPrice,
+    completed,
+    sourceId,
+    groups
   } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
@@ -90,12 +97,11 @@ exports.add = (req, res, next) => {
   });
   let origImages = req.body.origImages;
 
-  const trade = new Trade({
+  const market = new Market({
     title: title,
+    marketType: marketType,
     subtitle: subtitle,
     description: description,
-    condition: condition,
-    askingPrice: askingPrice,
     location: location,
     images:
       images && images.length > 0
@@ -104,21 +110,28 @@ exports.add = (req, res, next) => {
         ? JSON.parse(origImages)
         : [],
     activitys: activitys,
-    groups: groups,
-    tradeDetails: [],
-    traded: traded,
+    condition: condition,
+    security: security,
+    tracking: tracking,
+    occurredOn: occurredOn,
+    freeTrade: freeTrade,
+    marketPrice: marketPrice,
+    completed: completed,
     sourceId: undefined,
-    userId: req.userId
+    userId: req.userId,
+    groups: groups,
+    responseDetails: []
   });
 
-  let newTrade;
+  let newMarket;
+  const freeMarketTypes = ['stolen', 'lost', 'found'];
 
   if (sourceId) {
-    Trade.findOne({ sourceId: new ObjectId(sourceId) })
-      .then(existingTrade => {
-        if (existingTrade) {
+    Market.findOne({ sourceId: new ObjectId(sourceId), marketType: marketType })
+      .then(existingMarket => {
+        if (existingMarket && !existingMarket.completed) {
           const error = new Error(
-            'The requested item of kit is already listed for trade'
+            `The requested item of kit is already actively listed as ${marketType} on the market place`
           );
           error.statusCode = 500;
           throw error;
@@ -128,27 +141,29 @@ exports.add = (req, res, next) => {
       .then(kit => {
         if (kit.status !== 'owned') {
           const error = new Error(
-            'Item in kitbag does not have status of Owned, and therefore cannot be listed for trade'
+            'Item in kitbag does not have status of Owned, and therefore cannot be listed on the market place'
           );
           error.statusCode = 500;
           throw error;
         }
-        kit.status = 'trade';
+        kit.status = marketType;
         return kit.save();
       })
       .then(() => {
-        trade.sourceId = sourceId;
-        return trade.save();
+        market.sourceId = sourceId;
+        return market.save();
       })
       .then(result => {
-        newTrade = result;
+        newMarket = result;
         return User.findById(req.userId);
       })
       .then(user => {
-        user.package.size.trade += 1;
+        if (!freeMarketTypes.includes(marketType)) {
+          user.package.size.market += 1;
+        }
         res.status(201).json({
-          message: `Trade item "${newTrade.title}" successfully created.`,
-          trade: newTrade
+          message: `Item "${newMarket.title}" successfully added to the market place.`,
+          market: newMarket
         });
         return user.save();
       })
@@ -159,17 +174,19 @@ exports.add = (req, res, next) => {
         next(err);
       });
   } else {
-    trade
+    market
       .save()
       .then(result => {
-        newTrade = result;
+        newMarket = result;
         return User.findById(req.userId);
       })
       .then(user => {
-        user.package.size.trade += 1;
+        if (!freeMarketTypes.includes(marketType)) {
+          user.package.size.market += 1;
+        }
         res.status(201).json({
-          message: `Item for trade "${newTrade.title}" successfully created.`,
-          trade: newTrade
+          message: `Item "${newMarket.title}" successfully added to the market place.`,
+          market: newMarket
         });
         return user.save();
       })
@@ -182,13 +199,14 @@ exports.add = (req, res, next) => {
   }
 };
 
-// GET request to get an already existing trade item
+// GET request to get an already existing market item
 exports.getItem = (req, res, next) => {
-  const tradeId = req.params.tradeId;
+  const marketId = req.params.marketId;
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      res.status(200).json(trade);
+  Market.findById(marketId)
+    .populate('responseDetails.fromUserId', 'profile.username')
+    .then(market => {
+      res.status(200).json(market);
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -200,18 +218,22 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const tradeId = req.params.tradeId;
+  const marketId = req.params.marketId;
   const {
     title,
     subtitle,
     description,
-    condition,
-    askingPrice,
     location,
     activitys,
+    condition,
+    security,
+    tracking,
+    occurredOn,
+    freeTrade,
+    marketPrice,
+    completed,
     groups,
-    tradeDetails,
-    traded
+    responseDetails
   } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
@@ -219,25 +241,29 @@ exports.edit = (req, res, next) => {
     return { ...i, state: 'A' };
   });
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      trade.title = title;
-      trade.subtitle = subtitle;
-      trade.description = description;
-      trade.condition = condition;
-      trade.askingPrice = askingPrice;
-      trade.location = location;
-      trade.images = images;
-      trade.activitys = activitys;
-      trade.groups = groups;
-      trade.tradeDetails = tradeDetails;
-      trade.traded = traded;
-      return trade.save();
+  Market.findById(marketId)
+    .then(market => {
+      market.title = title;
+      market.subtitle = subtitle;
+      market.description = description;
+      market.location = location;
+      market.images = images;
+      market.activitys = activitys;
+      market.condition = condition;
+      market.security = security;
+      market.tracking = tracking;
+      market.occurredOn = occurredOn;
+      market.freeTrade = freeTrade;
+      market.marketPrice = marketPrice;
+      market.groups = groups;
+      market.responseDetails = responseDetails;
+      market.completed = completed;
+      return market.save();
     })
     .then(result => {
       res.status(201).json({
-        message: `Item for trade "${result.title}" successfully updated.`,
-        trade: result
+        message: `Item "${result.title}" on the market place successfully updated.`,
+        market: result
       });
     })
     .catch(err => {
@@ -250,13 +276,14 @@ exports.edit = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getItems = (req, res, next) => {
+  console.log('GETITEMS', req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, traded: by === 'traded' };
+  let query = { userId: req.userId, completed: by === 'completed' };
 
   if (search) {
     search = search.toLowerCase();
@@ -264,28 +291,28 @@ exports.getItems = (req, res, next) => {
       case 'title': {
         query = {
           userId: req.userId,
-          traded: false,
+          completed: false,
           title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
       case 'activity': {
-        query = { userId: req.userId, traded: false, activitys: search };
+        query = { userId: req.userId, completed: false, activitys: search };
         break;
       }
       case 'group': {
-        query = { userId: req.userId, traded: true };
+        query = { userId: req.userId, completed: true };
         break;
       }
-      case 'traded': {
-        query = { userId: req.userId, traded: true };
+      case 'completed': {
+        query = { userId: req.userId, completed: true };
         break;
       }
       default: {
         query = {
           $and: [
             { userId: req.userId },
-            { traded: false },
+            { completed: false },
             {
               $or: [
                 { title: { $regex: `.*${search}.*`, $options: 'i' } },
@@ -301,18 +328,19 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Trade.find(query)
+  Market.find(query)
     .countDocuments()
     .then(numberOfItems => {
+      console.log('NUM', numberOfItems);
       totalItems = numberOfItems;
-      return Trade.find(query)
+      return Market.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
-    .then(trades => {
+    .then(markets => {
       res.status(200).json({
-        trades: trades,
+        items: markets,
         filter: {
           by: by,
           search: search,
@@ -340,33 +368,33 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to delete trade item from kitbag
+// POST request to delete market item from kitbag
 exports.delete = (req, res, next) => {
-  const tradeId = req.params.tradeId;
+  const marketId = req.params.marketId;
 
   let sourceId;
-  let tradeTitle;
+  let marketTitle;
 
-  Trade.findById(tradeId)
-    .then(trade => {
-      if (trade.traded) {
+  Market.findById(marketId)
+    .then(market => {
+      if (market.completed) {
         const error = new Error(
-          'You have already traded this item, so it cannot be deleted'
+          'You have already completed this item, so it cannot be deleted'
         );
         error.statusCode = 403;
         throw error;
       }
-      sourceId = trade.sourceId;
-      tradeTitle = trade.title;
-      return trade.delete();
+      sourceId = market.sourceId;
+      marketTitle = market.title;
+      return market.delete();
     })
     .then(() => {
       return User.findById(req.userId);
     })
     .then(user => {
-      user.package.size.trade -= 1;
-      if (user.package.size.trade < 0) {
-        user.package.size.trade = 0;
+      user.package.size.market -= 1;
+      if (user.package.size.market < 0) {
+        user.package.size.market = 0;
       }
       return user.save();
     })
@@ -395,7 +423,7 @@ exports.delete = (req, res, next) => {
     })
     .then(() => {
       res.status(201).json({
-        message: `Item for trade "${tradeTitle}" successfully deleted.`
+        message: `Item "${marketTitle}" on the market place successfully deleted.`
       });
     })
     .catch(err => {
