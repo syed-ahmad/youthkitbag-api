@@ -2,12 +2,12 @@
 // const { dateFormat } = require('../util/sanitizer');
 
 // exports.tradeValidation = [
-//   body('offeredOn').customSanitizer(dateFormat),
-//   body('details', 'Please enter at least 10 characters to describe your offer')
+//   body('responseOn').customSanitizer(dateFormat),
+//   body('details', 'Please enter at least 10 characters to describe your responseDetail')
 //     .trim()
 //     .isLength({ min: 10 }),
 //   body(
-//     'offerPrice',
+//     'responsePrice',
 //     'Please enter a valid amount. It can be zero, if you want to give this item away for free'
 //   )
 //     .toFloat()
@@ -16,7 +16,7 @@
 
 // exports.tradeValidation = [
 //   body(
-//     'askingPrice',
+//     'marketPrice',
 //     'Please enter a valid amount. It can be zero, if you want to give this item away for free'
 //   )
 //     .toFloat()
@@ -25,8 +25,8 @@
 
 // exports.wantedValidation = [
 //   body(
-//     'offerPrice',
-//     'Please enter a valid amount. It can be zero, if you only want to receive free offers'
+//     'responsePrice',
+//     'Please enter a valid amount. It can be zero, if you only want to receive free responseDetails'
 //   )
 //     .toFloat()
 //     .isFloat({ min: 0, max: 99999.99 })

@@ -37,7 +37,7 @@ exports.kitValidation = [
 
 exports.marketValidation = [
   // body(
-  //   'askingPrice',
+  //   'marketPrice',
   //   'Please enter a valid amount. It can be zero, if you want to give this item away for free'
   // )
   //   .toFloat()
@@ -46,8 +46,8 @@ exports.marketValidation = [
 
 // exports.wantedValidation = [
 //   body(
-//     'offerPrice',
-//     'Please enter a valid amount. It can be zero, if you only want to receive free offers'
+//     'responsePrice',
+//     'Please enter a valid amount. It can be zero, if you only want to receive free responseDetails'
 //   )
 //     .toFloat()
 //     .isFloat({ min: 0, max: 99999.99 })

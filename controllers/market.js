@@ -9,6 +9,7 @@ const filterOptions = [
 
 // GET request a market item
 exports.getItem = (req, res, next) => {
+  console.log('GETITEM', req.params);
   const marketId = req.params.marketId;
   const groupArray = req.inGroups.map(g => g._id.toString());
 
@@ -20,6 +21,7 @@ exports.getItem = (req, res, next) => {
         throw error;
       }
       const groupCheck = market.groups.map(g => g._id.toString());
+      console.log('GRPCHECK', groupCheck);
       const inItemGroup =
         groupCheck.filter(g => groupArray.includes(g)).length > 0;
       if (!inItemGroup) {
@@ -35,10 +37,10 @@ exports.getItem = (req, res, next) => {
         subtitle: market.subtitle,
         description: market.description,
         condition: market.condition,
-        askingPrice: market.askingPrice,
+        marketPrice: market.marketPrice,
         images: market.images,
         activitys: market.activitys,
-        offerDetails: market.offerDetails.filter(
+        responseDetails: market.responseDetails.filter(
           t => t.fromUserId.toString() == req.userId.toString()
         )
       });
@@ -121,7 +123,7 @@ exports.getItems = (req, res, next) => {
         nt._id = t._id;
         nt.title = t.title;
         nt.subtitle = t.subtitle;
-        nt.askingPrice = t.askingPrice;
+        nt.marketPrice = t.marketPrice;
         nt.images = t.images;
         return nt;
       });
@@ -154,22 +156,22 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to submit market offer
-exports.offer = (req, res, next) => {
+// POST request to submit market respond
+exports.respond = (req, res, next) => {
   const marketId = req.params.marketId;
-  const { offeredOn, details, offerPrice } = req.body;
+  const { responseOn, details, responsePrice } = req.body;
 
-  const offerDetail = {
-    offeredOn: offeredOn,
+  const responseDetail = {
+    responseOn: responseOn,
     fromUserId: req.userId,
     details: details,
-    offerPrice: offerPrice,
+    responsePrice: responsePrice,
     completed: false,
     legit: true,
     messages: []
   };
 
-  console.log('OFFER', offerDetail);
+  console.log('responseDetail', responseDetail);
 
   Market.findById(marketId)
     .then(market => {
@@ -178,12 +180,12 @@ exports.offer = (req, res, next) => {
         error.statusCode = 500;
         throw error;
       }
-      market.offerDetails.push(offerDetail);
+      market.responseDetails.push(responseDetail);
       return market.save();
     })
     .then(result => {
       res.status(201).json({
-        message: `Thank you. Your offer has been submitted on this item "${result.title}".`
+        message: `Thank you. Your responseDetail has been submitted on this item "${result.title}".`
       });
     })
     .catch(err => {
