@@ -2,48 +2,39 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const stolenSchema = new Schema(
+const marketSchema = new Schema(
   {
     title: {
       type: String,
       required: true
     },
-    subtitle: {
-      type: String
+    marketType: {
+      type: String,
+      required: true
     },
-    description: {
-      type: String
-    },
+    subtitle: String,
+    description: String,
     location: {
       type: {
         type: String,
         enum: ['Point']
       },
-      coordinates: {
-        type: [Number]
-      }
+      coordinates: [Number]
     },
     images: [
       {
-        image: {
-          type: String
-        },
-        imageUrl: {
-          type: String
-        }
+        image: String,
+        imageUrl: String
       }
     ],
     activitys: [String],
+    condition: String,
     security: [String],
-    stolenOn: {
-      type: Date
-    },
-    tracking: {
-      type: String
-    },
-    recovered: {
-      type: Boolean
-    },
+    tracking: String,
+    occurredOn: Date,
+    freeTrade: Boolean,
+    marketPrice: Number,
+    completed: Boolean,
     sourceId: {
       type: Schema.Types.ObjectId,
       ref: 'Kit'
@@ -59,35 +50,22 @@ const stolenSchema = new Schema(
           type: Schema.Types.ObjectId,
           ref: 'Group'
         },
-        name: {
-          type: String
-        },
-        available: {
-          type: Date
-        },
-        include: {
-          type: Boolean
-        }
+        name: String,
+        available: Date,
+        include: Boolean
       }
     ],
-    reportDetails: [
+    responseDetails: [
       {
-        reportedOn: {
-          type: Date
-        },
+        responseOn: Date,
         fromUserId: {
           type: Schema.Types.ObjectId,
           ref: 'User'
         },
-        details: {
-          type: String
-        },
-        accepted: {
-          type: Boolean
-        },
-        legit: {
-          type: Boolean
-        },
+        details: String,
+        responsePrice: Number,
+        accepted: Boolean,
+        legit: Boolean,
         messages: [
           {
             type: Schema.Types.ObjectId,
@@ -100,4 +78,4 @@ const stolenSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Stolen', stolenSchema);
+module.exports = mongoose.model('Market', marketSchema);

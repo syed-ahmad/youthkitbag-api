@@ -1,6 +1,6 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const Kit = require('../models/kit');
-const Stolen = require('../models/stolen');
+const Market = require('../models/market');
 const User = require('../models/user');
 const { mapGroups } = require('../util/maps');
 
@@ -8,20 +8,21 @@ const filterOptions = [
   { key: 'all', value: 'All' },
   { key: 'title', value: 'Title' },
   { key: 'activity', value: 'Activity' },
-  { key: 'recovered', value: 'Recovered' }
+  { key: 'completed', value: 'Completed' }
 ];
 
-// GET request to return kit item as item for stolen
+// GET request to return kit item as item for market
 exports.getAdd = (req, res, next) => {
   const kitId = req.params.kitId;
+  const marketType = req.params.marketType;
 
   let sourceKit;
 
-  Stolen.findOne({ sourceId: new ObjectId(kitId) })
-    .then(currentStolen => {
-      if (currentStolen && !currentStolen.recovered) {
+  Market.findOne({ sourceId: new ObjectId(kitId), marketType: marketType })
+    .then(currentMarket => {
+      if (currentMarket && !currentMarket.completed) {
         const error = new Error(
-          'The requested item of kit is already listed as stolen'
+          `The requested item of kit is already actively listed as ${marketType} on the market place`
         );
         error.statusCode = 500;
         throw error;
@@ -29,9 +30,9 @@ exports.getAdd = (req, res, next) => {
       return Kit.findById(kitId);
     })
     .then(kit => {
-      if (kit.status !== 'owned' && kit.status !== 'trade') {
+      if (kit.status !== 'owned') {
         const error = new Error(
-          'Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen'
+          'Item in kitbag does not have status of Owned, and therefore cannot be listed on the market place'
         );
         error.statusCode = 500;
         throw error;
@@ -42,19 +43,24 @@ exports.getAdd = (req, res, next) => {
     .then(user => {
       res.status(200).json({
         title: sourceKit.title,
+        marketType: marketType,
         subtitle: sourceKit.subtitle,
         description: sourceKit.description,
         location: {},
         images: sourceKit.images,
         activitys: sourceKit.activitys,
+        condition:
+          sourceKit.inbag.length > 0 ? sourceKit.inbag[0].condition : 'used',
         security: sourceKit.security,
-        stolenOn: '',
         tracking: '',
-        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
-        reportDetails: [],
-        recovered: false,
+        occurredOn: new Date(),
+        freeTrade: false,
+        marketPrice: 0.0,
+        completed: false,
         sourceId: sourceKit._id,
-        userId: req.userId
+        userId: req.userId,
+        groups: mapGroups(user.profile, sourceKit.activitys, req.userId),
+        responseDetails: []
       });
     })
     .catch(err => {
@@ -65,20 +71,24 @@ exports.getAdd = (req, res, next) => {
     });
 };
 
-// POST request to add a new item into stolen
+// POST request to add a new item into market
 exports.add = (req, res, next) => {
   const {
     title,
+    marketType,
     subtitle,
     description,
-    stolenOn,
     location,
-    tracking,
     activitys,
+    condition,
     security,
-    groups,
-    recovered,
-    sourceId
+    tracking,
+    occurredOn,
+    freeTrade,
+    marketPrice,
+    completed,
+    sourceId,
+    groups
   } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
@@ -87,12 +97,11 @@ exports.add = (req, res, next) => {
   });
   let origImages = req.body.origImages;
 
-  const stolen = new Stolen({
+  const market = new Market({
     title: title,
+    marketType: marketType,
     subtitle: subtitle,
     description: description,
-    stolenOn: stolenOn,
-    tracking: tracking,
     location: location,
     images:
       images && images.length > 0
@@ -101,22 +110,28 @@ exports.add = (req, res, next) => {
         ? JSON.parse(origImages)
         : [],
     activitys: activitys,
+    condition: condition,
     security: security,
-    groups: groups,
-    reportDetails: [],
-    recovered: recovered,
+    tracking: tracking,
+    occurredOn: occurredOn,
+    freeTrade: freeTrade,
+    marketPrice: marketPrice,
+    completed: completed,
     sourceId: undefined,
-    userId: req.userId
+    userId: req.userId,
+    groups: groups,
+    responseDetails: []
   });
 
-  let newStolen;
+  let newMarket;
+  const freeMarketTypes = ['stolen', 'lost', 'found'];
 
   if (sourceId) {
-    Stolen.findOne({ sourceId: new ObjectId(sourceId) })
-      .then(existingStolen => {
-        if (existingStolen) {
+    Market.findOne({ sourceId: new ObjectId(sourceId), marketType: marketType })
+      .then(existingMarket => {
+        if (existingMarket && !existingMarket.completed) {
           const error = new Error(
-            'The requested item of kit is already listed as stolen'
+            `The requested item of kit is already actively listed as ${marketType} on the market place`
           );
           error.statusCode = 500;
           throw error;
@@ -124,29 +139,31 @@ exports.add = (req, res, next) => {
         return Kit.findById(sourceId);
       })
       .then(kit => {
-        if (kit.status !== 'owned' && kit.status !== 'trade') {
+        if (kit.status !== 'owned') {
           const error = new Error(
-            'Item in kitbag does not have status of Owned or Trade, and therefore cannot be listed as stolen'
+            'Item in kitbag does not have status of Owned, and therefore cannot be listed on the market place'
           );
           error.statusCode = 500;
           throw error;
         }
-        kit.status = 'stolen';
+        kit.status = marketType;
         return kit.save();
       })
       .then(() => {
-        stolen.sourceId = sourceId;
-        return stolen.save();
+        market.sourceId = sourceId;
+        return market.save();
       })
       .then(result => {
-        newStolen = result;
+        newMarket = result;
         return User.findById(req.userId);
       })
       .then(user => {
-        user.package.size.stolen += 1;
+        if (!freeMarketTypes.includes(marketType)) {
+          user.package.size.market += 1;
+        }
         res.status(201).json({
-          message: `Stolen item "${newStolen.title}" successfully reported.`,
-          stolen: newStolen
+          message: `Item "${newMarket.title}" successfully added to the market place.`,
+          market: newMarket
         });
         return user.save();
       })
@@ -157,17 +174,19 @@ exports.add = (req, res, next) => {
         next(err);
       });
   } else {
-    stolen
+    market
       .save()
       .then(result => {
-        newStolen = result;
+        newMarket = result;
         return User.findById(req.userId);
       })
       .then(user => {
-        user.package.size.stolen += 1;
+        if (!freeMarketTypes.includes(marketType)) {
+          user.package.size.market += 1;
+        }
         res.status(201).json({
-          message: `Stolen item "${newStolen.title}" successfully reported.`,
-          stolen: newStolen
+          message: `Item "${newMarket.title}" successfully added to the market place.`,
+          market: newMarket
         });
         return user.save();
       })
@@ -180,14 +199,14 @@ exports.add = (req, res, next) => {
   }
 };
 
-// GET request to get an already existing stolen item
+// GET request to get an already existing market item
 exports.getItem = (req, res, next) => {
-  const stolenId = req.params.stolenId;
+  const marketId = req.params.marketId;
 
-  Stolen.findById(stolenId)
-    .populate('reportDetails.fromUserId', 'profile.username')
-    .then(stolen => {
-      res.status(200).json(stolen);
+  Market.findById(marketId)
+    .populate('responseDetails.fromUserId', 'profile.username')
+    .then(market => {
+      res.status(200).json(market);
     })
     .catch(err => {
       if (!err.statusCode) {
@@ -199,19 +218,22 @@ exports.getItem = (req, res, next) => {
 
 // POST request to save edited changes to existing wanted item
 exports.edit = (req, res, next) => {
-  const stolenId = req.params.stolenId;
+  const marketId = req.params.marketId;
   const {
     title,
     subtitle,
     description,
-    stolenOn,
-    tracking,
     location,
     activitys,
+    condition,
     security,
+    tracking,
+    occurredOn,
+    freeTrade,
+    marketPrice,
+    completed,
     groups,
-    reportDetails,
-    recovered
+    responseDetails
   } = req.body;
 
   const activeImages = req.body.images.filter(i => i.state !== 'D');
@@ -219,26 +241,29 @@ exports.edit = (req, res, next) => {
     return { ...i, state: 'A' };
   });
 
-  Stolen.findById(stolenId)
-    .then(stolen => {
-      stolen.title = title;
-      stolen.subtitle = subtitle;
-      stolen.description = description;
-      stolen.stolenOn = stolenOn;
-      stolen.tracking = tracking;
-      stolen.location = location;
-      stolen.images = images;
-      stolen.activitys = activitys;
-      stolen.security = security;
-      stolen.groups = groups;
-      stolen.reportDetails = reportDetails;
-      stolen.recovered = recovered;
-      return stolen.save();
+  Market.findById(marketId)
+    .then(market => {
+      market.title = title;
+      market.subtitle = subtitle;
+      market.description = description;
+      market.location = location;
+      market.images = images;
+      market.activitys = activitys;
+      market.condition = condition;
+      market.security = security;
+      market.tracking = tracking;
+      market.occurredOn = occurredOn;
+      market.freeTrade = freeTrade;
+      market.marketPrice = marketPrice;
+      market.groups = groups;
+      market.responseDetails = responseDetails;
+      market.completed = completed;
+      return market.save();
     })
     .then(result => {
       res.status(201).json({
-        message: `Stolen item "${result.title}" successfully updated.`,
-        stolen: result
+        message: `Item "${result.title}" on the market place successfully updated.`,
+        market: result
       });
     })
     .catch(err => {
@@ -251,13 +276,14 @@ exports.edit = (req, res, next) => {
 
 // GET request to return page of items from users kitbag
 exports.getItems = (req, res, next) => {
+  console.log('GETITEMS', req.query);
   let by = req.query.by;
   let search = req.query.search;
   const page = +req.query.page || 1;
   const itemsPerPage = +req.query.pagesize || 24;
   let totalItems;
 
-  let query = { userId: req.userId, recovered: by === 'recovered' };
+  let query = { userId: req.userId, completed: by === 'completed' };
 
   if (search) {
     search = search.toLowerCase();
@@ -265,28 +291,28 @@ exports.getItems = (req, res, next) => {
       case 'title': {
         query = {
           userId: req.userId,
-          recovered: false,
+          completed: false,
           title: { $regex: `.*${search}.*`, $options: 'i' }
         };
         break;
       }
       case 'activity': {
-        query = { userId: req.userId, recovered: false, activitys: search };
+        query = { userId: req.userId, completed: false, activitys: search };
         break;
       }
       case 'group': {
-        query = { userId: req.userId, recovered: false };
+        query = { userId: req.userId, completed: true };
         break;
       }
-      case 'recovered': {
-        query = { userId: req.userId, recovered: true };
+      case 'completed': {
+        query = { userId: req.userId, completed: true };
         break;
       }
       default: {
         query = {
           $and: [
             { userId: req.userId },
-            { recovered: false },
+            { completed: false },
             {
               $or: [
                 { title: { $regex: `.*${search}.*`, $options: 'i' } },
@@ -302,18 +328,19 @@ exports.getItems = (req, res, next) => {
 
   let orderby = { updatedAt: -1 };
 
-  Stolen.find(query)
+  Market.find(query)
     .countDocuments()
     .then(numberOfItems => {
+      console.log('NUM', numberOfItems);
       totalItems = numberOfItems;
-      return Stolen.find(query)
+      return Market.find(query)
         .sort(orderby)
         .skip((page - 1) * itemsPerPage)
         .limit(itemsPerPage);
     })
-    .then(stolens => {
+    .then(markets => {
       res.status(200).json({
-        stolens: stolens,
+        items: markets,
         filter: {
           by: by,
           search: search,
@@ -341,33 +368,33 @@ exports.getItems = (req, res, next) => {
     });
 };
 
-// POST request to delete stolen item from kitbag
+// POST request to delete market item from kitbag
 exports.delete = (req, res, next) => {
-  const stolenId = req.params.stolenId;
+  const marketId = req.params.marketId;
 
   let sourceId;
-  let stolenTitle;
+  let marketTitle;
 
-  Stolen.findById(stolenId)
-    .then(stolen => {
-      if (stolen.recovered) {
+  Market.findById(marketId)
+    .then(market => {
+      if (market.completed) {
         const error = new Error(
-          'You have already recovered this item, so it cannot be deleted'
+          'You have already completed this item, so it cannot be deleted'
         );
         error.statusCode = 403;
         throw error;
       }
-      sourceId = stolen.sourceId;
-      stolenTitle = stolen.title;
-      return stolen.delete();
+      sourceId = market.sourceId;
+      marketTitle = market.title;
+      return market.delete();
     })
     .then(() => {
       return User.findById(req.userId);
     })
     .then(user => {
-      user.package.size.stolen -= 1;
-      if (user.package.size.stolen < 0) {
-        user.package.size.stolen = 0;
+      user.package.size.market -= 1;
+      if (user.package.size.market < 0) {
+        user.package.size.market = 0;
       }
       return user.save();
     })
@@ -396,7 +423,7 @@ exports.delete = (req, res, next) => {
     })
     .then(() => {
       res.status(201).json({
-        message: `Item reported as stolen "${stolenTitle}" successfully deleted`
+        message: `Item "${marketTitle}" on the market place successfully deleted.`
       });
     })
     .catch(err => {

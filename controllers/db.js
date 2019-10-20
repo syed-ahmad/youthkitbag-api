@@ -1,11 +1,9 @@
 const User = require('../models/user');
 const Kit = require('../models/kit');
-const Trade = require('../models/trade');
+const Market = require('../models/market');
 const List = require('../models/list');
 const Message = require('../models/message');
 const Order = require('../models/order');
-const Stolen = require('../models/stolen');
-const Wanted = require('../models/wanted');
 
 exports.getCollection = (req, res, next) => {
   const collection = req.params.collection;
@@ -22,18 +20,14 @@ exports.getCollection = (req, res, next) => {
           return User.find();
         case 'kit':
           return Kit.find();
-        case 'trade':
-          return Trade.find();
+        case 'market':
+          return Market.find();
         case 'list':
           return List.find();
         case 'message':
           return Message.find();
         case 'order':
           return Order.find();
-        case 'stolen':
-          return Stolen.find();
-        case 'wanted':
-          return Wanted.find();
         default:
           break;
       }

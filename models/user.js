@@ -62,18 +62,14 @@ const userSchema = new Schema(
       icon: { type: String, default: 'coffee' },
       max: {
         kit: { type: Number, default: 20 },
-        trade: { type: Number, default: 5 },
-        wanted: { type: Number, default: 5 },
-        stolen: { type: Number, default: 999 },
+        market: { type: Number, default: 10 },
         photos: { type: Number, default: 50 },
         groups: { type: Number, default: 3 },
         groupadmins: { type: Number, default: 1 }
       },
       size: {
         kit: { type: Number, default: 0 },
-        trade: { type: Number, default: 0 },
-        wanted: { type: Number, default: 0 },
-        stolen: { type: Number, default: 0 },
+        market: { type: Number, default: 0 },
         photos: { type: Number, default: 0 },
         groups: { type: Number, default: 0 },
         groupadmins: { type: Number, default: 0 }

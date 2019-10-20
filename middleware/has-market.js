@@ -7,9 +7,9 @@ const User = require('../models/user');
 module.exports = (req, res, next) => {
   User.findById(req.userId)
     .then(user => {
-      if (user.package.size.wanted >= user.package.max.wanted) {
+      if (user.package.size.market >= user.package.max.market) {
         const error = new Error(
-          'You have reached the limit of wanted items that you can create on your account. Please upgrade your account.'
+          'You have reached the limit of market place items that you can create on your account. Please upgrade your account.'
         );
         error.statusCode = 404;
         throw error;
